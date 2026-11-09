@@ -105,6 +105,48 @@ function RegBlock({ d, lang }) {
   );
 }
 
+// Key: what the colours, icons and chips on the cards mean
+function KeyModal({ lang, onClose }) {
+  const th = lang === 'th';
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+  const row = (left, text) => <div className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-200"><span className="shrink-0 w-28 flex items-center gap-1 flex-wrap">{left}</span><span className="min-w-0 leading-snug">{text}</span></div>;
+  const head = (s) => <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 mt-1">{s}</h3>;
+  const chip = (cls, s) => <span className={'text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ' + cls}>{s}</span>;
+  const classNames = { Ia: 'Class Ia', Ib: 'Class Ib', Ic: 'Class Ic', II: 'Class II (beta-blockers)', III: 'Class III (potassium channel blockers)', IV: 'Class IV (calcium channel blockers)', Other: th ? 'อื่น ๆ (adenosine, digoxin, magnesium ...)' : 'Other (adenosine, digoxin, magnesium ...)' };
+  return (
+    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} data-key-modal>
+      <div role="dialog" aria-modal="true" aria-label={th ? 'สัญลักษณ์' : 'Key'} className="bg-white dark:bg-slate-900 w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100">{th ? 'สัญลักษณ์ในหน้านี้' : 'Key to the symbols'}</h2>
+          <button type="button" onClick={onClose} aria-label={th ? 'ปิด' : 'Close'} className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">×</button>
+        </div>
+        <div className="p-4 space-y-2.5">
+          {head(th ? 'สีและขอบการ์ด = กลุ่มยา (Vaughan Williams)' : 'Colour and card edge = drug class (Vaughan Williams)')}
+          {Object.keys(CLASS_TONE).map(c => row(<span className={'text-[11px] font-bold px-2 py-0.5 rounded-md border ' + CLASS_TONE[c].chip}>{c}</span>, classNames[c]))}
+          {head(th ? 'ไอคอนรูปแบบยา (จากทางให้ยาเท่านั้น)' : 'Dosage-form icon (from the route only)')}
+          {row(<DrugIcon routes={['PO']} vwClass="II" size="sm" lang={lang} />, th ? 'ยารับประทาน (PO)' : 'Oral (PO)')}
+          {row(<DrugIcon routes={['IV']} vwClass="II" size="sm" lang={lang} />, th ? 'ยาฉีด (IV)' : 'Injection (IV)')}
+          {row(<DrugIcon routes={['PO', 'IV']} vwClass="II" size="sm" lang={lang} />, th ? 'ทั้งรับประทานและฉีด' : 'Oral and injection')}
+          <p className="text-[11px] italic text-slate-500 dark:text-slate-400">{th ? 'เป็นภาพทั่วไป ไม่ใช่ภาพผลิตภัณฑ์จริง และไม่ได้แยกเม็ดหรือแคปซูล ขวดหรือถุง' : 'A generic picture, not a product photo; it does not tell tablet from capsule or vial from bag.'}</p>
+          {head(th ? 'ป้ายประเทศ (ทะเบียนยา)' : 'Country chips (registers)')}
+          {row(chip(REG_TONE.th, 'TH'), th ? 'สีเต็ม = มีอยู่ในปัจจุบัน TH ไทย US สหรัฐฯ UK สหราชอาณาจักร EU สหภาพยุโรป (ใช้สเปนแทน) JP ญี่ปุ่น' : 'Coloured = current. TH Thailand, US United States, UK United Kingdom, EU European Union (Spain as the proxy), JP Japan.')}
+          {row(chip('border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300', 'TH †'), th ? 'เคยมีทะเบียนแต่ยกเลิกหรือหมดอายุแล้ว (ใช้ได้เฉพาะไทย)' : 'Was registered, now cancelled or expired (only the Thai register keeps this).')}
+          {row(chip('border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400', 'JP ⊘'), th ? 'ไม่พบในทะเบียนนั้น ไม่ได้แปลว่าไม่เคยอนุมัติ' : 'Not found in that register; an old approval is not excluded.')}
+          {head(th ? 'การ์ดยา' : 'Drug card')}
+          {row(<span className="text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">{th ? 'ขนาดยา' : 'Adult dose'}</span>, th ? 'ขนาดยาผู้ใหญ่จาก MIMS Thailand แสดงบรรทัดแรก แตะ "ทั้งหมด" เพื่อดูทุกข้อบ่งใช้' : 'Adult dose from MIMS Thailand: the first line, tap "All N doses" for every indication or route.')}
+          {row(<span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">NLEM 2569: b</span>, th ? 'อยู่ในบัญชียาหลักแห่งชาติ 2569 พร้อมหมวด' : 'On the Thai National List of Essential Medicines 2569, with its category.')}
+          {row(<span className="text-[11px] italic text-slate-500 dark:text-slate-400">Unknown</span>, th ? 'แหล่งอ้างอิงที่อ่านไม่ระบุค่านี้' : 'The sources read do not state this value.')}
+          {row(<span className="text-[11px] italic text-slate-500 dark:text-slate-400">N/A</span>, th ? 'ไม่มีข้อมูลในแหล่งอ้างอิงนั้น หรือไม่เกี่ยวข้อง' : 'Not covered by that source, or not applicable.')}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // One guideline block of the Dosing tab: labelled rows from a guideline, or N/A, always with its source.
 function GuidelineBlock({ id, title, rows, naText, refKey, lang }) {
   return (

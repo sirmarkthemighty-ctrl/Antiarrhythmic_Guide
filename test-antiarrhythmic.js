@@ -641,6 +641,42 @@ async function main() {
     })()`);
     results.push({ test: 'Country availability: chips on every card; TH, US, UK, EU and JP toggles, FDA status beside them, NLEM only next to FDA', pass: reg.chipCards === 27 && reg.order === 'countries>fda>nlem' && reg.ctryButtons === 'th,us,uk,eu,jp' && reg.all === 27 && reg.th === 19 && reg.thPast === 4 && reg.thNever === 4 && reg.usNever === 1 && reg.thUs === 19 && reg.us === 26 && reg.uk === 22 && reg.eu === 25 && reg.jp === 22 && reg.usJp === 22 && reg.nlem === reg.nlemCards && reg.back === 27, detail: JSON.stringify(reg) });
 
+    // Active filter chips, Key button, card layout, collapsible tools tile, compare spacing
+    const ui2 = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const q = (s) => document.querySelector(s);
+      const click = async (s) => { q(s).click(); await wait(250); };
+      const out = {};
+      if (!q('[data-filter-row="registration"]')) { await click('[data-filters-toggle]'); }
+      out.none = !q('[data-active-filters]');
+      await click('[data-reg-ctry="th"]'); await click('[data-nlem-only]');
+      const labels = () => Array.from(document.querySelectorAll('[data-filter-chip]')).map(c => c.textContent.trim());
+      out.chips = labels();
+      document.querySelector('[data-filter-chip]').click(); await wait(250);
+      out.afterRemove = labels(); out.shown = document.querySelectorAll('article').length;
+      await click('[data-clear-filters]'); out.afterClear = !q('[data-active-filters]'); out.all = document.querySelectorAll('article').length;
+      // Key
+      await click('[data-key-btn]'); out.key = !!q('[data-key-modal]') && q('[data-key-modal]').textContent.includes('Dosage-form icon') && q('[data-key-modal]').textContent.includes('Country chips');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); await wait(250); out.keyClosed = !q('[data-key-modal]');
+      // card layout: class chip and route chips share a line; warning before the dose; chips in the footer beside NLEM
+      const card = Array.from(document.querySelectorAll('article')).find(a => a.textContent.includes('Metoprolol'));
+      const chipBtn = card.querySelector('button[title*="Action Potential"]');
+      out.chipLine = chipBtn.parentElement.textContent.includes('IV') && chipBtn.parentElement.textContent.includes('PO');
+      const html = card.innerHTML; out.warnBeforeDose = html.indexOf('rose-50/70') < html.indexOf('data-card-dose');
+      const footerChips = card.querySelector('[data-reg-chips]'); out.footerChips = !!footerChips && /NLEM/.test(footerChips.parentElement.textContent);
+      // tools tile
+      if (!q('[data-guide-buttons]') || q('[data-guide-buttons]').className.includes('hidden')) await click('[data-tools-toggle]'); // the phone check above left it collapsed (remembered)
+      const tools = q('[data-guide-buttons]'); const open0 = !!tools && tools.className.includes('grid');
+      await click('[data-tools-toggle]'); out.toolsHidden = q('[data-guide-buttons]') === null || q('[data-guide-buttons]').className.includes('hidden');
+      await click('[data-tools-toggle]'); out.toolsBack = open0 && q('[data-guide-buttons]').className.includes('grid');
+      // compare spacing
+      Array.from(document.querySelectorAll('article')).slice(0, 2).forEach(a => Array.from(a.querySelectorAll('button')).find(b => /Compare/.test(b.textContent)).click()); await wait(250);
+      out.pad = document.querySelector('main').className.includes('pb-24');
+      const clr = document.querySelector('button[title="Clear All"]'); if (clr) clr.click(); await wait(200);
+      return out;
+    })()`);
+    results.push({ test: 'Active filter chips (remove one, Clear all), Key modal, card layout, collapsible Tools tile, compare bar spacing', pass: ui2.none && ui2.chips.length === 2 && ui2.afterRemove.length === 1 && ui2.shown === 15 && ui2.afterClear && ui2.all === 27 && ui2.key && ui2.keyClosed && ui2.chipLine && ui2.warnBeforeDose && ui2.footerChips && ui2.toolsHidden && ui2.toolsBack && ui2.pad, detail: JSON.stringify(ui2) });
+
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
     results.push({ test: 'Zero Console Errors / Runtime Exceptions', pass: errorCount === 0, detail: errorCount === 0 ? 'Clean execution' : JSON.stringify(pageErrors) });

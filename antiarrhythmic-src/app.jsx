@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "Active filters are shown as removable chips under the controls with a Clear button, and a Key button beside the count explains the colours, icons and chips. The six clinical tools sit in a collapsible tile (closed by default on phones, remembered). On the tile card the class and route chips share a line, the warning comes before the dose, and the country chips sit in the last row beside NLEM; the compare bar no longer covers the last card.",
       "The Countries group has TH, US, UK, EU and JP buttons, so availability can be filtered country by country (every selected button must hold).",
       "Country availability like the bronchodilator guide: each card shows TH, US, UK, EU and JP chips (current, past †, not found ⊘). The Filters box has a Countries group with TH, US, UK, EU and JP buttons, an FDA status group (Currently, Past, Not found) beside it, and NLEM only next to that; the old three-way NLEM menu is replaced. The Overview tab lists the status per country with its basis. Sources: Thai FDA register, DailyMed, emc, AEMPS CIMA (Spain as the EU proxy) and KEGG MEDICUS (JAPIC), checked 9 Nov 2026.",
       "Every drug now has a dosage-form icon (oral, injection, or both) tinted by its class; tile cards have a class colour edge, a bigger name, one merged brand line, and show the first MIMS dose line with the rest on tap. On phones the list view is a compact row list with no sideways scroll.",
@@ -89,6 +90,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "ตัวกรองที่ใช้อยู่แสดงเป็นชิปกดเอาออกได้ใต้แถบควบคุม พร้อมปุ่มล้างทั้งหมด และปุ่มสัญลักษณ์ข้างจำนวนยาอธิบายสี ไอคอน และป้ายต่าง ๆ เครื่องมือทางคลินิกทั้งหกอยู่ในแผ่นที่พับได้ (ปิดไว้ก่อนบนมือถือ และจำค่าไว้) บนการ์ด ชิปกลุ่มยาและทางให้ยาอยู่บรรทัดเดียวกัน คำเตือนมาก่อนขนาดยา ป้ายประเทศอยู่แถวล่างข้าง NLEM และแถบเปรียบเทียบไม่บังการ์ดสุดท้ายอีกต่อไป",
       "กลุ่มประเทศมีปุ่ม TH, US, UK, EU และ JP กรองการวางจำหน่ายรายประเทศได้ (ต้องเป็นจริงทุกปุ่มที่เลือก)",
       "แสดงการวางจำหน่ายตามประเทศเหมือนแอป bronchodilator: การ์ดยามีป้าย TH, US, UK, EU และ JP (ปัจจุบัน เคยมี † ไม่พบ ⊘) กล่องตัวกรองมีกลุ่มประเทศ TH US UK EU และ JP กลุ่มสถานะ อย. (ปัจจุบัน เคยมี ไม่พบ) ถัดไป และ เฉพาะบัญชียาหลัก ต่อจากนั้น แทนเมนู NLEM สามตัวเลือกเดิม แท็บภาพรวมแสดงสถานะรายประเทศพร้อมที่มา แหล่งข้อมูล: ทะเบียนยา อย. DailyMed emc AEMPS CIMA (ใช้สเปนแทนสหภาพยุโรป) และ KEGG MEDICUS (JAPIC) ตรวจเมื่อ 9 พ.ย. 2569",
       "ยาทุกตัวมีไอคอนรูปแบบยา (รับประทาน ฉีด หรือทั้งสอง) ใช้สีตามกลุ่มยา การ์ด tile มีแถบสีกลุ่มยาด้านซ้าย ชื่อยาใหญ่ขึ้น บรรทัดชื่อการค้ารวมกัน และแสดงขนาดยาบรรทัดแรกของ MIMS ส่วนที่เหลือแตะเพื่อดู บนมือถือมุมมองรายการเป็นแถวกะทัดรัดไม่ต้องเลื่อนซ้ายขวา",
@@ -274,6 +276,9 @@ function App() {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [detailDrug, setDetailDrug] = useState(null);
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+  const [isKeyOpen, setIsKeyOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(() => { try { const v = localStorage.getItem('aag-tools'); if (v === '1' || v === '0') return v === '1'; } catch (e) {} return !(window.matchMedia && window.matchMedia('(max-width: 639px)').matches); });
+  useEffect(() => { try { localStorage.setItem('aag-tools', toolsOpen ? '1' : '0'); } catch (e) {} }, [toolsOpen]);
 
   const openApModal = (cls = 'Ia') => {
     setApModalClass(cls || 'Ia');
@@ -466,12 +471,17 @@ function App() {
         </header>
 
       {/* Main Content Area */}
-      <main className="space-y-4">
+      <main className={'space-y-4 ' + (compareIds.length > 0 ? 'pb-24' : '')}>
 
         {/* Search, Sort, View Mode & Filters Pinned Toolbar */}
         <section aria-label="Controls" className="sticky top-0 z-30 pt-2 pb-2 md:pt-3 md:pb-2.5 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur-md space-y-2">
           {/* Tools: one row of six tiles on phones, a normal button row from tablet width up */}
-          <div aria-label="Clinical Tools" data-guide-buttons className="grid grid-cols-6 gap-1 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 w-full print:hidden">
+          <button type="button" onClick={() => setToolsOpen(v => !v)} aria-expanded={toolsOpen} data-tools-toggle
+            className="w-full flex items-center justify-between gap-2 px-3 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 print:hidden">
+            <span className="flex items-center gap-1.5"><Calculator className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />{lang === 'th' ? 'เครื่องมือทางคลินิก' : 'Clinical tools'} <span className="font-semibold text-slate-500 dark:text-slate-400">(6)</span></span>
+            <span aria-hidden="true" className={'text-slate-500 dark:text-slate-300 transition-transform ' + (toolsOpen ? 'rotate-180' : '')}>▾</span>
+          </button>
+          <div aria-label="Clinical Tools" data-guide-buttons className={toolsOpen ? 'grid grid-cols-6 gap-1 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 w-full print:hidden' : 'hidden'}>
             {[
               ['ap', t.apGuide, 'bg-indigo-50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-200 text-indigo-700', Zap, () => openApModal('Ia')],
               ['guideline', t.guidelineNav, 'bg-emerald-50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200 text-emerald-700', Stethoscope, () => setIsGuidelineModalOpen(true)],
@@ -696,12 +706,47 @@ function App() {
           )}
         </div>
 
+        {/* Active filters as removable chips (same pattern as the bronchodilator guide) */}
+        {(() => {
+          const indLabel = { af_rate: t.indAfRate, af_rhythm: t.indAfRhythm, svt: t.indSvt, vt_vf: t.indVtVf, brady: t.indWpw };
+          const stLabel = { current: t.regCurrent, past: t.regPast, never: t.regNever };
+          const regName = { th: t.regNameTH, us: t.regNameUS, uk: t.regNameUK, eu: t.regNameEU, jp: t.regNameJP };
+          const chips = [
+            ...(searchTerm.trim() ? [{ key: 'q', label: '"' + searchTerm.trim() + '"', off: () => setSearchTerm('') }] : []),
+            ...selectedClasses.map(c => ({ key: 'c' + c, label: 'Class ' + c, off: () => toggleClass(c) })),
+            ...(selectedIndication !== 'all' ? [{ key: 'ind', label: indLabel[selectedIndication] || selectedIndication, off: () => setSelectedIndication('all') }] : []),
+            ...(safeHfrefOnly ? [{ key: 'hf', label: t.safeHfref, off: () => setSafeHfrefOnly(false) }] : []),
+            ...(safeCadOnly ? [{ key: 'cad', label: t.safeCad, off: () => setSafeCadOnly(false) }] : []),
+            ...(lowQtOnly ? [{ key: 'qt', label: t.lowQtRisk, off: () => setLowQtOnly(false) }] : []),
+            ...(renalAdjustOnly ? [{ key: 'renal', label: t.renalAdjust, off: () => setRenalAdjustOnly(false) }] : []),
+            ...regCtry.map(c => ({ key: 'rc' + c, label: regName[c], off: () => toggleIn(setRegCtry)(c) })),
+            ...regSt.map(s => ({ key: 'rs' + s, label: t.regFda + ': ' + stLabel[s], off: () => toggleIn(setRegSt)(s) })),
+            ...(nlemOnly ? [{ key: 'nlem', label: t.regNlemOnly, off: () => setNlemOnly(false) }] : [])
+          ];
+          return chips.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5 px-0.5" role="group" aria-label={lang === 'th' ? 'ตัวกรองที่ใช้อยู่' : 'Active filters'} data-active-filters>
+              <button type="button" onClick={resetAllFilters} data-clear-filters className="shrink-0 min-h-[26px] px-2.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-300 shadow-sm inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap transition-colors"><X className="w-3 h-3" /> {lang === 'th' ? 'ล้างทั้งหมด' : 'Clear'}</button>
+              {chips.map(c => (
+                <button key={c.key} type="button" onClick={c.off} title={c.label} aria-label={(lang === 'th' ? 'เอาออก: ' : 'Remove: ') + c.label} data-filter-chip
+                  className="max-w-full min-h-[26px] inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300 text-[11px] font-bold leading-tight text-left transition-colors">
+                  <span className="break-words min-w-0">{c.label}</span><X className="w-3 h-3 shrink-0 opacity-60" />
+                </button>
+              ))}
+            </div>
+          ) : null;
+        })()}
+
         {/* Counter & Print Link Bar */}
         <div className="flex items-start justify-between gap-2 px-1">
           <div className="text-[11px] md:text-xs text-slate-600 dark:text-slate-400 min-w-0 pt-0.5" aria-live="polite">
             {t.showingCount} <strong className="font-bold text-slate-800 dark:text-slate-200 tabular-nums">{filteredDrugs.length}</strong> {t.ofDrugs} <span className="font-bold text-slate-800 dark:text-slate-200 tabular-nums">{DRUGS_DATA.length}</span> {t.drugsLabel}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            <button type="button" onClick={() => setIsKeyOpen(true)} data-key-btn aria-haspopup="dialog" title={lang === 'th' ? 'ความหมายของสี ไอคอน และป้ายต่าง ๆ' : 'What the colours, icons and chips mean'}
+              className="inline-flex items-center gap-1 h-6 md:h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm text-[11px] font-bold whitespace-nowrap transition-colors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3" aria-hidden="true"><circle cx="12" cy="12" r="9.5" /><path d="M9.3 9.2a2.8 2.8 0 1 1 4 2.6c-.8.5-1.3 1-1.3 2" /><path d="M12 17.2h.01" /></svg>
+              {lang === 'th' ? 'สัญลักษณ์' : 'Key'}
+            </button>
             <button
               onClick={() => setIsPrintOpen(true)}
               className="inline-flex items-center gap-1 h-6 md:h-7 px-2 rounded-md border shadow-sm text-[11px] font-bold whitespace-nowrap transition-colors border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
@@ -744,10 +789,8 @@ function App() {
                       <div className="flex items-start gap-2.5 min-w-0">
                       <DrugIcon routes={drug.routes} vwClass={drug.vwClass} lang={lang} />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                            {drug.genericName}
-                          </span>
+                        <span className="block font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{drug.genericName}</span>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -760,6 +803,9 @@ function App() {
                             <span>Class {drug.vwClass}</span>
                             <Zap className="w-2.5 h-2.5 text-amber-500 group-hover/ap:scale-110 transition-transform" />
                           </button>
+                            {drug.routes.map(r => (
+                              <span key={r} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${r === 'IV' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300'}`}>{r}</span>
+                            ))}
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2">
                           {drug.brandNames.join(', ')}
@@ -769,14 +815,6 @@ function App() {
                       </div>
                       </div>
 
-                      {/* Routes Badges */}
-                      <div className="flex gap-1 shrink-0">
-                        {drug.routes.map(r => (
-                          <span key={r} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${r === 'IV' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300'}`}>
-                            {r}
-                          </span>
-                        ))}
-                      </div>
                     </div>
 
                     {/* Target / Channel */}
@@ -796,7 +834,11 @@ function App() {
                       ))}
                     </div>
 
-                    <RegChips d={drug} lang={lang} />
+                    {/* Critical warning first, then the dose */}
+                    <div className="p-2 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-[11px] text-rose-900 dark:text-rose-200 leading-snug flex items-start gap-1.5 line-clamp-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                      <span>{drug.cautionsAndWarnings[0]}</span>
+                    </div>
 
                     {/* Adult dose per MIMS Thailand: the first row, the rest on tap (full text, one line per indication or route) */}
                     {drug.mims && (
@@ -816,18 +858,16 @@ function App() {
                       </div>
                     )}
 
-                    {/* Critical Warning Pill */}
-                    <div className="p-2 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-[11px] text-rose-900 dark:text-rose-200 leading-snug flex items-start gap-1.5 line-clamp-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
-                      <span>{drug.cautionsAndWarnings[0]}</span>
-                    </div>
                   </div>
 
                   {/* Card Bottom / Action Row */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`} title={nlemText(drug.nlem, lang)}>
-                      {nlemShort(drug.nlem, lang)}
-                    </span>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0">
+                      <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`} title={nlemText(drug.nlem, lang)}>
+                        {nlemShort(drug.nlem, lang)}
+                      </span>
+                      <RegChips d={drug} lang={lang} />
+                    </div>
 
                     <button
                       onClick={(e) => toggleCompare(drug.id, e)}
@@ -1000,6 +1040,8 @@ function App() {
       )}
 
       {/* Changelog Modal */}
+      {isKeyOpen && <KeyModal lang={lang} onClose={() => setIsKeyOpen(false)} />}
+
       {isChangelogOpen && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 print:hidden" data-changelog onClick={(e) => { if (e.target === e.currentTarget) setIsChangelogOpen(false); }}>
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-800">
