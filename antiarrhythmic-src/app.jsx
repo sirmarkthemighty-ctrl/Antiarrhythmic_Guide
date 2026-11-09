@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "Selecting one drug adds a Dose sheet (one page: adult dose, ESC guideline rows, key warning, availability; print or copy as text); selecting any drugs adds Print selected. The detail window opens on the Dosing tab and keeps the first dose line and the key warning in view on every tab. On phones the Clinical tools tile steps aside while you scroll down. When no drug matches, the empty state lists the active filters so you can remove them one by one; the typed search text is highlighted in names and brands. Printing now works for the ward sheet too (it prints only the sheet).",
       "Cards now have Select (top right) with Details under it, like the bronchodilator guide: icon-only on phones. The Compare button on the card is gone; the bar at the bottom shows Compare only once two or more drugs are selected. The country chips (TH US UK EU JP) sit on one line under the name, with the NLEM chip right after TH because it is specific to Thailand.",
       "Active filters are shown as removable chips under the controls with a Clear button, and a Key button beside the count explains the colours, icons and chips. The six clinical tools sit in a collapsible tile (closed by default on phones, remembered). On the tile card the class and route chips share a line, the warning comes before the dose, and the country chips sit in the last row beside NLEM; the compare bar no longer covers the last card.",
       "The Countries group has TH, US, UK, EU and JP buttons, so availability can be filtered country by country (every selected button must hold).",
@@ -91,6 +92,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "เลือกยาหนึ่งตัวจะมีปุ่มใบสรุปขนาดยา (หนึ่งหน้า: ขนาดยาผู้ใหญ่ แถวจากแนวทาง ESC คำเตือนสำคัญ การวางจำหน่าย พิมพ์หรือคัดลอกเป็นข้อความได้) และเมื่อเลือกยาใดก็ตามจะมีปุ่มพิมพ์ที่เลือก หน้าต่างรายละเอียดเปิดที่แท็บขนาดยา และแสดงบรรทัดขนาดยาแรกกับคำเตือนสำคัญตลอดทุกแท็บ บนมือถือแผ่นเครื่องมือจะหลบเมื่อเลื่อนลง เมื่อไม่มียาที่ตรงเงื่อนไข หน้าว่างจะแสดงตัวกรองที่ใช้อยู่ให้เอาออกทีละตัว และไฮไลต์ข้อความที่ค้นหาในชื่อยาและชื่อการค้า การพิมพ์ใบสรุปทำงานได้ถูกต้อง (พิมพ์เฉพาะใบสรุป)",
       "การ์ดมีปุ่มเลือก (มุมขวาบน) และปุ่มรายละเอียดอยู่ด้านล่าง เหมือนแอป bronchodilator บนมือถือแสดงเป็นไอคอน ปุ่มเปรียบเทียบบนการ์ดถูกเอาออก แถบด้านล่างจะแสดงปุ่มเปรียบเทียบเมื่อเลือกยาตั้งแต่สองตัวขึ้นไป ป้ายประเทศ (TH US UK EU JP) อยู่บรรทัดเดียวใต้ชื่อยา โดยป้าย NLEM อยู่ต่อจาก TH เพราะเป็นของประเทศไทยโดยเฉพาะ",
       "ตัวกรองที่ใช้อยู่แสดงเป็นชิปกดเอาออกได้ใต้แถบควบคุม พร้อมปุ่มล้างทั้งหมด และปุ่มสัญลักษณ์ข้างจำนวนยาอธิบายสี ไอคอน และป้ายต่าง ๆ เครื่องมือทางคลินิกทั้งหกอยู่ในแผ่นที่พับได้ (ปิดไว้ก่อนบนมือถือ และจำค่าไว้) บนการ์ด ชิปกลุ่มยาและทางให้ยาอยู่บรรทัดเดียวกัน คำเตือนมาก่อนขนาดยา ป้ายประเทศอยู่แถวล่างข้าง NLEM และแถบเปรียบเทียบไม่บังการ์ดสุดท้ายอีกต่อไป",
       "กลุ่มประเทศมีปุ่ม TH, US, UK, EU และ JP กรองการวางจำหน่ายรายประเทศได้ (ต้องเป็นจริงทุกปุ่มที่เลือก)",
@@ -275,12 +277,27 @@ function App() {
   const [isOrganModalOpen, setIsOrganModalOpen] = useState(false);
   const [isInteractionsModalOpen, setIsInteractionsModalOpen] = useState(false);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+  const [printSelOnly, setPrintSelOnly] = useState(false);
+  const [isDoseSheetOpen, setIsDoseSheetOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [detailDrug, setDetailDrug] = useState(null);
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   const [isKeyOpen, setIsKeyOpen] = useState(false);
+  const [toolsHidden, setToolsHidden] = useState(false); // phones: the tools tile steps aside while you scroll down the list
   const [toolsOpen, setToolsOpen] = useState(() => { try { const v = localStorage.getItem('aag-tools'); if (v === '1' || v === '0') return v === '1'; } catch (e) {} return !(window.matchMedia && window.matchMedia('(max-width: 639px)').matches); });
   useEffect(() => { try { localStorage.setItem('aag-tools', toolsOpen ? '1' : '0'); } catch (e) {} }, [toolsOpen]);
+  useEffect(() => {
+    // Down 40px or more hides the tile, up 40px or more (or back near the top) shows it; small steps add up
+    let last = window.scrollY, anchor = last, dir = 0;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > last) { if (dir !== 1) { dir = 1; anchor = last; } if (y - anchor > 40 && y > 160) setToolsHidden(true); }
+      else if (y < last) { if (dir !== -1) { dir = -1; anchor = last; } if (anchor - y > 40 || y < 80) setToolsHidden(false); }
+      last = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const openApModal = (cls = 'Ia') => {
     setApModalClass(cls || 'Ia');
@@ -423,6 +440,25 @@ function App() {
   }, [compareIds]);
 
   // Class order for grouping (stable sort keeps the chosen sort inside each class)
+  // Active filters as removable chips (shared by the strip under the controls and the empty-state message)
+  const activeFilterChips = () => {
+        const indLabel = { af_rate: t.indAfRate, af_rhythm: t.indAfRhythm, svt: t.indSvt, vt_vf: t.indVtVf, brady: t.indWpw };
+        const stLabel = { current: t.regCurrent, past: t.regPast, never: t.regNever };
+        const regName = { th: t.regNameTH, us: t.regNameUS, uk: t.regNameUK, eu: t.regNameEU, jp: t.regNameJP };
+        const chips = [
+          ...(searchTerm.trim() ? [{ key: 'q', label: '"' + searchTerm.trim() + '"', off: () => setSearchTerm('') }] : []),
+          ...selectedClasses.map(c => ({ key: 'c' + c, label: 'Class ' + c, off: () => toggleClass(c) })),
+          ...(selectedIndication !== 'all' ? [{ key: 'ind', label: indLabel[selectedIndication] || selectedIndication, off: () => setSelectedIndication('all') }] : []),
+          ...(safeHfrefOnly ? [{ key: 'hf', label: t.safeHfref, off: () => setSafeHfrefOnly(false) }] : []),
+          ...(safeCadOnly ? [{ key: 'cad', label: t.safeCad, off: () => setSafeCadOnly(false) }] : []),
+          ...(lowQtOnly ? [{ key: 'qt', label: t.lowQtRisk, off: () => setLowQtOnly(false) }] : []),
+          ...(renalAdjustOnly ? [{ key: 'renal', label: t.renalAdjust, off: () => setRenalAdjustOnly(false) }] : []),
+          ...regCtry.map(c => ({ key: 'rc' + c, label: regName[c], off: () => toggleIn(setRegCtry)(c) })),
+          ...regSt.map(s => ({ key: 'rs' + s, label: t.regFda + ': ' + stLabel[s], off: () => toggleIn(setRegSt)(s) })),
+          ...(nlemOnly ? [{ key: 'nlem', label: t.regNlemOnly, off: () => setNlemOnly(false) }] : [])
+        ];
+    return chips;
+  };
   const REG_GB = 'flex bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 shadow-sm shrink-0 items-center h-[26px] md:h-7 gap-0.5';
   const REG_BTN = 'h-full px-1.5 md:px-2 rounded flex items-center justify-center gap-1 text-[10px] font-bold transition-all whitespace-nowrap ';
   const CLASS_RANK = { Ia: 1, Ib: 2, Ic: 3, II: 4, III: 5, IV: 6, Other: 7 };
@@ -479,11 +515,11 @@ function App() {
         <section aria-label="Controls" className="sticky top-0 z-30 pt-2 pb-2 md:pt-3 md:pb-2.5 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur-md space-y-2">
           {/* Tools: one row of six tiles on phones, a normal button row from tablet width up */}
           <button type="button" onClick={() => setToolsOpen(v => !v)} aria-expanded={toolsOpen} data-tools-toggle
-            className="w-full flex items-center justify-between gap-2 px-3 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 print:hidden">
+            className={(toolsHidden && isPhone ? 'hidden ' : '') + "w-full flex items-center justify-between gap-2 px-3 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 print:hidden"}>
             <span className="flex items-center gap-1.5"><Calculator className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />{lang === 'th' ? 'เครื่องมือทางคลินิก' : 'Clinical tools'} <span className="font-semibold text-slate-500 dark:text-slate-400">(6)</span></span>
             <span aria-hidden="true" className={'text-slate-500 dark:text-slate-300 transition-transform ' + (toolsOpen ? 'rotate-180' : '')}>▾</span>
           </button>
-          <div aria-label="Clinical Tools" data-guide-buttons className={toolsOpen ? 'grid grid-cols-6 gap-1 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 w-full print:hidden' : 'hidden'}>
+          <div aria-label="Clinical Tools" data-guide-buttons className={toolsOpen && !(toolsHidden && isPhone) ? 'grid grid-cols-6 gap-1 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 w-full print:hidden' : 'hidden'}>
             {[
               ['ap', t.apGuide, 'bg-indigo-50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-200 text-indigo-700', Zap, () => openApModal('Ia')],
               ['guideline', t.guidelineNav, 'bg-emerald-50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200 text-emerald-700', Stethoscope, () => setIsGuidelineModalOpen(true)],
@@ -710,21 +746,7 @@ function App() {
 
         {/* Active filters as removable chips (same pattern as the bronchodilator guide) */}
         {(() => {
-          const indLabel = { af_rate: t.indAfRate, af_rhythm: t.indAfRhythm, svt: t.indSvt, vt_vf: t.indVtVf, brady: t.indWpw };
-          const stLabel = { current: t.regCurrent, past: t.regPast, never: t.regNever };
-          const regName = { th: t.regNameTH, us: t.regNameUS, uk: t.regNameUK, eu: t.regNameEU, jp: t.regNameJP };
-          const chips = [
-            ...(searchTerm.trim() ? [{ key: 'q', label: '"' + searchTerm.trim() + '"', off: () => setSearchTerm('') }] : []),
-            ...selectedClasses.map(c => ({ key: 'c' + c, label: 'Class ' + c, off: () => toggleClass(c) })),
-            ...(selectedIndication !== 'all' ? [{ key: 'ind', label: indLabel[selectedIndication] || selectedIndication, off: () => setSelectedIndication('all') }] : []),
-            ...(safeHfrefOnly ? [{ key: 'hf', label: t.safeHfref, off: () => setSafeHfrefOnly(false) }] : []),
-            ...(safeCadOnly ? [{ key: 'cad', label: t.safeCad, off: () => setSafeCadOnly(false) }] : []),
-            ...(lowQtOnly ? [{ key: 'qt', label: t.lowQtRisk, off: () => setLowQtOnly(false) }] : []),
-            ...(renalAdjustOnly ? [{ key: 'renal', label: t.renalAdjust, off: () => setRenalAdjustOnly(false) }] : []),
-            ...regCtry.map(c => ({ key: 'rc' + c, label: regName[c], off: () => toggleIn(setRegCtry)(c) })),
-            ...regSt.map(s => ({ key: 'rs' + s, label: t.regFda + ': ' + stLabel[s], off: () => toggleIn(setRegSt)(s) })),
-            ...(nlemOnly ? [{ key: 'nlem', label: t.regNlemOnly, off: () => setNlemOnly(false) }] : [])
-          ];
+          const chips = activeFilterChips();
           return chips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5 px-0.5" role="group" aria-label={lang === 'th' ? 'ตัวกรองที่ใช้อยู่' : 'Active filters'} data-active-filters>
               <button type="button" onClick={resetAllFilters} data-clear-filters className="shrink-0 min-h-[26px] px-2.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-300 shadow-sm inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap transition-colors"><X className="w-3 h-3" /> {lang === 'th' ? 'ล้างทั้งหมด' : 'Clear'}</button>
@@ -750,7 +772,7 @@ function App() {
               {lang === 'th' ? 'สัญลักษณ์' : 'Key'}
             </button>
             <button
-              onClick={() => setIsPrintOpen(true)}
+              onClick={() => { setPrintSelOnly(false); setIsPrintOpen(true); }}
               className="inline-flex items-center gap-1 h-6 md:h-7 px-2 rounded-md border shadow-sm text-[11px] font-bold whitespace-nowrap transition-colors border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -764,6 +786,16 @@ function App() {
           <div className="p-12 text-center bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-750 space-y-3">
             <Info className="w-8 h-8 text-slate-400 mx-auto" />
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t.noMatch}</p>
+            {activeFilterChips().length > 0 && (
+              <div className="space-y-2" data-empty-chips>
+                <p className="text-xs text-slate-600 dark:text-slate-400">{lang === 'th' ? 'ตัวกรองที่ใช้อยู่ (แตะเพื่อเอาออกทีละตัว):' : 'Active filters (tap one to remove it):'}</p>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {activeFilterChips().map(c => (
+                    <button key={c.key} type="button" onClick={c.off} aria-label={(lang === 'th' ? 'เอาออก: ' : 'Remove: ') + c.label} className="max-w-full min-h-[26px] inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300 text-[11px] font-bold leading-tight text-left"><span className="break-words min-w-0">{c.label}</span><X className="w-3 h-3 shrink-0 opacity-60" /></button>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               onClick={resetAllFilters}
               className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow hover:bg-indigo-700"
@@ -791,7 +823,7 @@ function App() {
                       <div className="flex items-start gap-2.5 min-w-0 flex-1">
                       <DrugIcon routes={drug.routes} vwClass={drug.vwClass} lang={lang} />
                       <div className="min-w-0">
-                        <span className="block font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{drug.genericName}</span>
+                        <span className="block font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"><Hl text={drug.genericName} term={searchTerm} /></span>
                         <div className="flex items-center gap-1.5 flex-wrap mt-1">
                           <button
                             type="button"
@@ -810,9 +842,9 @@ function App() {
                             ))}
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2">
-                          {drug.brandNames.join(', ')}
+                          <Hl text={drug.brandNames.join(', ')} term={searchTerm} />
                           {drug.brandNames.length > 0 && drug.thaiBrands.length > 0 && ' · '}
-                          {drug.thaiBrands.length > 0 && <span data-thai-brands>TH: {drug.thaiBrands.slice(0, 4).join(', ')}{drug.thaiBrands.length > 4 ? ` +${drug.thaiBrands.length - 4}` : ''}</span>}
+                          {drug.thaiBrands.length > 0 && <span data-thai-brands>TH: <Hl text={drug.thaiBrands.slice(0, 4).join(', ')} term={searchTerm} />{drug.thaiBrands.length > 4 ? ` +${drug.thaiBrands.length - 4}` : ''}</span>}
                         </p>
                         <div className="flex items-center gap-1 flex-wrap mt-1" data-chip-row>
                           <RegChips d={drug} lang={lang} nlem />
@@ -1003,6 +1035,14 @@ function App() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {compareIds.length === 1 && (
+              <button onClick={() => setIsDoseSheetOpen(true)} data-bar-dose-sheet className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow transition-colors">
+                {lang === 'th' ? 'ใบสรุปขนาดยา' : 'Dose sheet'}
+              </button>
+            )}
+            <button onClick={() => { setPrintSelOnly(true); setIsPrintOpen(true); }} data-bar-print className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition-colors">
+              {lang === 'th' ? 'พิมพ์ที่เลือก' : 'Print selected'}
+            </button>
             {compareIds.length >= 2 && (
               <button
                 onClick={() => setIsCompareOpen(true)}
@@ -1078,7 +1118,8 @@ function App() {
       {isInteractionsModalOpen && <DrugInteractionsModal isOpen onClose={() => setIsInteractionsModalOpen(false)} lang={lang} />}
       {isCompareOpen && <CompareModal isOpen onClose={() => setIsCompareOpen(false)} lang={lang} compareList={comparedDrugObjects} onRemove={removeFromCompare} />}
       {detailDrug && <DetailModal key={detailDrug.id} drug={detailDrug} onClose={() => setDetailDrug(null)} lang={lang} onOpenApModal={openApModal} />}
-      {isPrintOpen && <PrintSheetView drugs={DRUGS_DATA} lang={lang} onClose={() => setIsPrintOpen(false)} />}
+      {isPrintOpen && <PrintSheetView drugs={printSelOnly ? comparedDrugObjects : DRUGS_DATA} lang={lang} onClose={() => setIsPrintOpen(false)} />}
+      {isDoseSheetOpen && comparedDrugObjects.length === 1 && <DoseSheet drug={comparedDrugObjects[0]} lang={lang} onClose={() => setIsDoseSheetOpen(false)} />}
     </div>
   );
 }

@@ -1641,7 +1641,7 @@ function CompareModal({ isOpen, onClose, lang, compareList, onRemove }) {
 
 // --- Detail Monograph Modal ---
 function DetailModal({ drug, onClose, lang, onOpenApModal }) {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dosing');
 
   const tabs = [
     { id: 'overview', label: lang === 'th' ? 'ภาพรวมและกลไก' : 'Overview & Mechanism', short: lang === 'th' ? 'ภาพรวม' : 'Overview' },
@@ -1683,6 +1683,12 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Summary strip: the first adult dose line and the key warning stay in view on every tab */}
+        <div className="px-4 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1" data-detail-summary>
+          {drug.mims && drug.mims.rows.length > 0 && <p className="text-[11px] leading-snug text-slate-800 dark:text-slate-100 line-clamp-2"><span className="font-bold text-indigo-700 dark:text-indigo-300">{lang === 'th' ? drug.mims.rows[0].lTh : drug.mims.rows[0].lEn}:</span> {lang === 'th' ? drug.mims.rows[0].th : drug.mims.rows[0].en}</p>}
+          <p className="text-[11px] leading-snug text-rose-800 dark:text-rose-300 line-clamp-2"><span className="font-bold">{lang === 'th' ? 'คำเตือน: ' : 'Warning: '}</span>{drug.cautionsAndWarnings[0]}</p>
         </div>
 
         {/* Tab Navigation */}
@@ -1945,8 +1951,89 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
 }
 
 // --- Printable Ward Reference Sheet ---
+// Print a sheet: the CSS in styles.css hides everything except #patient-sheet-print while the class is on <html>.
+const printSheet = () => {
+  const h = document.documentElement;
+  const done = () => { h.classList.remove('printing-sheet'); window.removeEventListener('afterprint', done); };
+  h.classList.add('printing-sheet');
+  window.addEventListener('afterprint', done);
+  window.print();
+};
+
+// One-page dose sheet for a single drug: the adult dose from MIMS, what the ESC guidelines say, the key warning and availability.
+function DoseSheet({ drug, lang, onClose }) {
+  const th = lang === 'th';
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+  const blocks = [
+    ['MIMS Thailand', th ? 'ขนาดยาผู้ใหญ่ (MIMS Thailand)' : 'Adult dose (MIMS Thailand)', drug.mims],
+    ['ESC AF 2024', th ? 'ESC 2024 AF' : 'ESC 2024 AF guideline', drug.esc],
+    ['ESC VA 2022', th ? 'ESC 2022 ventricular arrhythmia' : 'ESC 2022 ventricular arrhythmia guideline', drug.escVa],
+    ['ESC SVT 2019', th ? 'ESC 2019 SVT' : 'ESC 2019 SVT guideline', drug.escSvt]
+  ].filter(([, , s]) => s && s.rows && s.rows.length);
+  const plain = () => [
+    drug.genericName + ' (Class ' + drug.vwClass + '; ' + drug.routes.join(' + ') + ')',
+    ...(drug.thaiBrands.length ? ['TH brands (MIMS): ' + drug.thaiBrands.join(', ')] : []),
+    '',
+    ...blocks.flatMap(([n, , s]) => [n + ':', ...s.rows.map(r => '- ' + (th ? r.lTh : r.lEn) + ': ' + (th ? r.th : r.en))]),
+    '',
+    'Warning: ' + drug.cautionsAndWarnings[0],
+    'Availability: ' + REG_COUNTRIES.map(c => c.toUpperCase() + ' ' + drug.reg[c]).join(', '),
+    'Antiarrhythmic Drug Guide (decision support only; check the product label).'
+  ].join('\n');
+  const copy = async () => { try { await navigator.clipboard.writeText(plain()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch (e) { /* clipboard blocked */ } };
+  const node = (
+    <div id="patient-sheet-print" data-dose-sheet className="fixed inset-0 bg-white z-[9999] overflow-y-auto p-4 sm:p-8 text-slate-900 font-sans print:p-0">
+      <div className="max-w-3xl mx-auto space-y-4">
+        <div className="flex items-center justify-between gap-2 border-b-2 border-slate-900 pb-3 print:hidden">
+          <h1 className="text-lg font-extrabold">{th ? 'ใบสรุปขนาดยา' : 'Dose sheet'}</h1>
+          <div className="flex gap-2 flex-wrap justify-end">
+            <button type="button" onClick={copy} data-copy-sheet className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold">{copied ? (th ? 'คัดลอกแล้ว' : 'Copied') : (th ? 'คัดลอกข้อความ' : 'Copy text')}</button>
+            <button type="button" onClick={printSheet} className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow hover:bg-indigo-700">{th ? 'พิมพ์ (A4)' : 'Print (A4)'}</button>
+            <button type="button" onClick={onClose} className="px-3 py-2 bg-slate-200 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-300">{th ? 'ปิด' : 'Close'}</button>
+          </div>
+        </div>
+        <div className="flex items-start gap-3">
+          <DrugIcon routes={drug.routes} vwClass={drug.vwClass} lang={lang} />
+          <div className="min-w-0">
+            <h2 className="text-2xl font-extrabold leading-tight">{drug.genericName} <span className="text-sm font-bold text-slate-600">Class {drug.vwClass} · {drug.routes.join(' + ')}</span></h2>
+            <p className="text-xs text-slate-600">{drug.brandNames.join(', ')}{drug.thaiBrands.length > 0 && (drug.brandNames.length ? ' · ' : '') + 'TH: ' + drug.thaiBrands.join(', ')}</p>
+            <p className="text-xs text-slate-600">{nlemText(drug.nlem, lang)}</p>
+          </div>
+        </div>
+        <div className="p-3 rounded-lg border border-rose-300 bg-rose-50 text-sm text-rose-900"><b>{th ? 'คำเตือนสำคัญ: ' : 'Key warning: '}</b>{drug.cautionsAndWarnings[0]}</div>
+        {blocks.length === 0 && <p className="italic text-slate-600">N/A</p>}
+        {blocks.map(([n, label, s]) => (
+          <div key={n} className="break-inside-avoid space-y-1.5">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-indigo-800">{label}</h3>
+            {s.rows.map((r, i) => (
+              <p key={i} className="text-sm leading-snug"><b>{th ? r.lTh : r.lEn}:</b> {th ? r.th : r.en}</p>
+            ))}
+          </div>
+        ))}
+        <div className="flex items-center gap-1.5 flex-wrap border-t border-slate-300 pt-2"><span className="text-xs font-bold">{th ? 'การวางจำหน่าย:' : 'Availability:'}</span><RegChips d={drug} lang={lang} nlem /></div>
+        <p className="text-[11px] italic text-slate-600">{th ? 'ใช้ประกอบการตัดสินใจเท่านั้น ตรวจสอบกับฉลากยาและดุลยพินิจทางคลินิกเสมอ' : 'Decision support only. Check the product label and use clinical judgement.'} · {th ? 'แหล่งอ้างอิง: MIMS Thailand, แนวทาง ESC (ดูหน้าเอกสารอ้างอิงในแอป)' : 'Sources: MIMS Thailand and the ESC guidelines named above (see the References section in the app).'}</p>
+      </div>
+    </div>
+  );
+  return ReactDOM.createPortal(node, document.body);
+}
+
+// Highlights the typed search text inside a name or brand line
+function Hl({ text, term }) {
+  const q = (term || '').trim();
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return text;
+  return <>{text.slice(0, i)}<mark className="bg-amber-200 dark:bg-amber-500/40 text-inherit rounded px-0.5">{text.slice(i, i + q.length)}</mark>{text.slice(i + q.length)}</>;
+}
+
 function PrintSheetView({ drugs, lang, onClose }) {
-  return (
+  return ReactDOM.createPortal(
     <div id="patient-sheet-print" className="fixed inset-0 bg-white z-[9999] overflow-y-auto p-8 text-slate-900 font-sans print:p-0">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4 print:hidden">
@@ -1955,7 +2042,7 @@ function PrintSheetView({ drugs, lang, onClose }) {
             <p className="text-xs text-slate-500">Cardiology & Emergency Ward Protocol Sheet</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => window.print()} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow hover:bg-indigo-700 flex items-center gap-2">
+            <button onClick={printSheet} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow hover:bg-indigo-700 flex items-center gap-2">
               <Printer className="w-4 h-4" /> Print Sheet (A4)
             </button>
             <button onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-300">
@@ -2006,6 +2093,7 @@ function PrintSheetView({ drugs, lang, onClose }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

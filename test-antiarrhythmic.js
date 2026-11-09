@@ -290,7 +290,7 @@ async function main() {
     const clClosed = await evaluate(`!document.querySelector('[data-changelog]')`);
     results.push({ test: 'Version button opens changelog (newest first), Escape closes it', pass: !!ver && ver === firstEntry && clClosed, detail: `badge ${ver}, first entry ${firstEntry}, closed ${clClosed}` });
 
-    // Detail view starts on Overview again after another tab was used
+    // Detail view starts on the Dosing tab again after another tab was used
     const freshTab = await evaluate(`(async () => {
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const closeBtn = () => document.querySelector('.fixed button svg line[x1="18"]').closest('button');
@@ -304,7 +304,7 @@ async function main() {
       closeBtn().click(); await wait(200);
       return label;
     })()`);
-    results.push({ test: 'Reopened detail view starts on the Overview tab', pass: /Overview/.test(freshTab), detail: `active tab: ${freshTab}` });
+    results.push({ test: 'Reopened detail view starts on the Dosing tab', pass: /Dosing/.test(freshTab), detail: `active tab: ${freshTab}` });
 
     // Audit: every detail tab of every drug shows at least one source line; NLEM tab is the 2569 list
     const audit = await evaluate(`(async () => {
@@ -423,6 +423,7 @@ async function main() {
     const cardCurve = await evaluate(`(async () => {
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       document.querySelector('article').click(); await wait(300);
+      Array.from(document.querySelectorAll('.fixed button')).find(b => /^Overview/.test(b.textContent.trim())).click(); await wait(250);
       const svgs = document.querySelectorAll('.fixed svg path[stroke-dasharray="4,4"]').length;
       const btn = Array.from(document.querySelectorAll('.fixed button')).some(b => /View Class .* Action Potential Curve/.test(b.textContent));
       const close = document.querySelector('.fixed button svg line[x1="18"]'); if (close) close.closest('button').click();
@@ -702,6 +703,53 @@ async function main() {
       return out;
     })()`);
     results.push({ test: 'Cards: Select with Details below at the top right, no Compare button on the card, Compare appears after two are selected, NLEM chip and country chips on one line under the name', pass: sel.order === 'select>details' && sel.noCompareButton && sel.nlemUnderName && sel.oneSelected && sel.dockOne && sel.dockTwo && sel.detailOpened, detail: JSON.stringify(sel) });
+
+    // Selection bar actions, detail summary, empty state and search highlight
+    const bigUi = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const q = (s) => document.querySelector(s);
+      const out = {};
+      const cards = () => Array.from(document.querySelectorAll('article'));
+      // one selected: Dose sheet + Print selected, no Compare
+      cards()[3].querySelector('[data-select]').click(); await wait(250);
+      out.bar1 = !!q('[data-bar-dose-sheet]') && !!q('[data-bar-print]') && !Array.from(document.querySelectorAll('button')).some(b => /^Compare \\(\\d\\)/.test(b.textContent.trim()));
+      q('[data-bar-dose-sheet]').click(); await wait(300);
+      const sheet = q('[data-dose-sheet]');
+      out.sheetInBody = !!sheet && sheet.parentElement === document.body && sheet.id === 'patient-sheet-print';
+      out.sheetText = !!sheet && /Adult dose \\(MIMS Thailand\\)/.test(sheet.textContent) && /Key warning/.test(sheet.textContent) && sheet.querySelectorAll('[data-reg]').length === 5;
+      out.copyBtn = !!q('[data-copy-sheet]');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); await wait(250); out.sheetClosed = !q('[data-dose-sheet]');
+      // two selected: Compare appears; Print selected prints only the selection
+      cards()[4].querySelector('[data-select]').click(); await wait(250);
+      q('[data-bar-print]').click(); await wait(300);
+      const ps = q('#patient-sheet-print');
+      out.printRows = ps ? ps.querySelectorAll('tbody tr').length : -1; out.printInBody = !!ps && ps.parentElement === document.body;
+      Array.from(ps.querySelectorAll('button')).find(b => /Close/.test(b.textContent)).click(); await wait(250);
+      document.querySelector('button[title="Clear All"]').click(); await wait(250);
+      // detail: Dosing first, summary strip
+      cards()[0].click(); await wait(300);
+      const active = Array.from(document.querySelectorAll('.fixed .flex.border-b button')).find(b => b.className.includes('border-indigo-600'));
+      out.detailTab = active ? active.textContent.trim().slice(0, 6) : '';
+      out.summary = !!q('[data-detail-summary]') && /Warning/.test(q('[data-detail-summary]').textContent);
+      Array.from(document.querySelectorAll('.fixed .flex.border-b button')).find(b => /^Warnings/.test(b.textContent.trim())).click(); await wait(200);
+      out.summaryStays = !!q('[data-detail-summary]');
+      const close = document.querySelector('.fixed button svg line[x1="18"]'); if (close) close.closest('button').click(); await wait(250);
+      // search highlight and empty state
+      const input = q('[data-search-box] input');
+      const setVal = async (v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, v); input.dispatchEvent(new Event('input', { bubbles: true })); await wait(300); };
+      await setVal('amio');
+      out.mark = Array.from(document.querySelectorAll('article mark')).map(m => m.textContent.toLowerCase()).join();
+      if (!q('[data-reg-ctry="us"]')) { q('[data-filters-toggle]').click(); await wait(300); }
+      q('[data-reg-ctry="jp"]').click(); await wait(250); q('[data-reg-st="never"]').click(); await wait(250);
+      out.empty = !!q('[data-empty-chips]') && q('[data-empty-chips]').querySelectorAll('button').length >= 3;
+      q('[data-empty-chips] button').click(); await wait(250);
+      out.afterOne = document.querySelectorAll('[data-empty-chips] button').length;
+      q('[data-clear-filters]') && q('[data-clear-filters]').click(); await wait(250);
+      await setVal('');
+      out.restored = cards().length;
+      return out;
+    })()`);
+    results.push({ test: 'Selection bar (Dose sheet, Print selected), detail summary on Dosing, empty state with removable filters, search highlight', pass: bigUi.bar1 && bigUi.sheetInBody && bigUi.sheetText && bigUi.copyBtn && bigUi.sheetClosed && bigUi.printRows === 2 && bigUi.printInBody && bigUi.detailTab === 'Dosing' && bigUi.summary && bigUi.summaryStays && /amio/.test(bigUi.mark) && bigUi.empty && bigUi.restored === 27, detail: JSON.stringify(bigUi) });
 
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
