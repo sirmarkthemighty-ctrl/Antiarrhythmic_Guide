@@ -71,7 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
-      "Cards now have Select (top right) with Details under it, like the bronchodilator guide: icon-only on phones. The Compare button on the card is gone; the bar at the bottom shows Compare only once two or more drugs are selected. The NLEM chip moved up under the name; the country chips stay in the last row.",
+      "Cards now have Select (top right) with Details under it, like the bronchodilator guide: icon-only on phones. The Compare button on the card is gone; the bar at the bottom shows Compare only once two or more drugs are selected. The NLEM chip and the country chips (TH US UK EU JP) sit on one line under the name.",
       "Active filters are shown as removable chips under the controls with a Clear button, and a Key button beside the count explains the colours, icons and chips. The six clinical tools sit in a collapsible tile (closed by default on phones, remembered). On the tile card the class and route chips share a line, the warning comes before the dose, and the country chips sit in the last row beside NLEM; the compare bar no longer covers the last card.",
       "The Countries group has TH, US, UK, EU and JP buttons, so availability can be filtered country by country (every selected button must hold).",
       "Country availability like the bronchodilator guide: each card shows TH, US, UK, EU and JP chips (current, past †, not found ⊘). The Filters box has a Countries group with TH, US, UK, EU and JP buttons, an FDA status group (Currently, Past, Not found) beside it, and NLEM only next to that; the old three-way NLEM menu is replaced. The Overview tab lists the status per country with its basis. Sources: Thai FDA register, DailyMed, emc, AEMPS CIMA (Spain as the EU proxy) and KEGG MEDICUS (JAPIC), checked 9 Nov 2026.",
@@ -91,7 +91,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
-      "การ์ดมีปุ่มเลือก (มุมขวาบน) และปุ่มรายละเอียดอยู่ด้านล่าง เหมือนแอป bronchodilator บนมือถือแสดงเป็นไอคอน ปุ่มเปรียบเทียบบนการ์ดถูกเอาออก แถบด้านล่างจะแสดงปุ่มเปรียบเทียบเมื่อเลือกยาตั้งแต่สองตัวขึ้นไป ป้าย NLEM ย้ายขึ้นมาใต้ชื่อยา ส่วนป้ายประเทศยังอยู่แถวล่าง",
+      "การ์ดมีปุ่มเลือก (มุมขวาบน) และปุ่มรายละเอียดอยู่ด้านล่าง เหมือนแอป bronchodilator บนมือถือแสดงเป็นไอคอน ปุ่มเปรียบเทียบบนการ์ดถูกเอาออก แถบด้านล่างจะแสดงปุ่มเปรียบเทียบเมื่อเลือกยาตั้งแต่สองตัวขึ้นไป ป้าย NLEM และป้ายประเทศ (TH US UK EU JP) อยู่บรรทัดเดียวกันใต้ชื่อยา",
       "ตัวกรองที่ใช้อยู่แสดงเป็นชิปกดเอาออกได้ใต้แถบควบคุม พร้อมปุ่มล้างทั้งหมด และปุ่มสัญลักษณ์ข้างจำนวนยาอธิบายสี ไอคอน และป้ายต่าง ๆ เครื่องมือทางคลินิกทั้งหกอยู่ในแผ่นที่พับได้ (ปิดไว้ก่อนบนมือถือ และจำค่าไว้) บนการ์ด ชิปกลุ่มยาและทางให้ยาอยู่บรรทัดเดียวกัน คำเตือนมาก่อนขนาดยา ป้ายประเทศอยู่แถวล่างข้าง NLEM และแถบเปรียบเทียบไม่บังการ์ดสุดท้ายอีกต่อไป",
       "กลุ่มประเทศมีปุ่ม TH, US, UK, EU และ JP กรองการวางจำหน่ายรายประเทศได้ (ต้องเป็นจริงทุกปุ่มที่เลือก)",
       "แสดงการวางจำหน่ายตามประเทศเหมือนแอป bronchodilator: การ์ดยามีป้าย TH, US, UK, EU และ JP (ปัจจุบัน เคยมี † ไม่พบ ⊘) กล่องตัวกรองมีกลุ่มประเทศ TH US UK EU และ JP กลุ่มสถานะ อย. (ปัจจุบัน เคยมี ไม่พบ) ถัดไป และ เฉพาะบัญชียาหลัก ต่อจากนั้น แทนเมนู NLEM สามตัวเลือกเดิม แท็บภาพรวมแสดงสถานะรายประเทศพร้อมที่มา แหล่งข้อมูล: ทะเบียนยา อย. DailyMed emc AEMPS CIMA (ใช้สเปนแทนสหภาพยุโรป) และ KEGG MEDICUS (JAPIC) ตรวจเมื่อ 9 พ.ย. 2569",
@@ -814,7 +814,10 @@ function App() {
                           {drug.brandNames.length > 0 && drug.thaiBrands.length > 0 && ' · '}
                           {drug.thaiBrands.length > 0 && <span data-thai-brands>TH: {drug.thaiBrands.slice(0, 4).join(', ')}{drug.thaiBrands.length > 4 ? ` +${drug.thaiBrands.length - 4}` : ''}</span>}
                         </p>
-                        <span data-nlem-chip title={nlemText(drug.nlem, lang)} className={`inline-block mt-1 text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ${drug.nlem.list ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400'}`}>{nlemShort(drug.nlem, lang)}</span>
+                        <div className="flex items-center gap-1 flex-wrap mt-1" data-chip-row>
+                          <span data-nlem-chip title={nlemText(drug.nlem, lang)} className={`inline-block text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ${drug.nlem.list ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400'}`}>{nlemShort(drug.nlem, lang)}</span>
+                          <RegChips d={drug} lang={lang} />
+                        </div>
                       </div>
                       </div>
                       <CardActions selected={isCompared} onSelect={(e) => toggleCompare(drug.id, e)} onDetails={(e) => { e.stopPropagation(); setDetailDrug(drug); }} lang={lang} />
@@ -863,10 +866,6 @@ function App() {
 
                   </div>
 
-                  {/* Card bottom: availability by country */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <RegChips d={drug} lang={lang} />
-                  </div>
                 </article>}
                 </React.Fragment>
               );

@@ -76,7 +76,7 @@ const REG_STATUS = { current: ['Current', 'ปัจจุบัน'], past: ['P
 function RegChips({ d, lang }) {
   const i = lang === 'th' ? 1 : 0;
   return (
-    <div className="flex flex-wrap gap-1" data-reg-chips>
+    <div className="contents" data-reg-chips>
       {REG_COUNTRIES.map(c => {
         const st = d.reg[c];
         const cls = st === 'current' ? REG_TONE[c] : st === 'past' ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300' : 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400';

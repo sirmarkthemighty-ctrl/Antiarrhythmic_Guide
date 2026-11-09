@@ -663,7 +663,7 @@ async function main() {
       const chipBtn = card.querySelector('button[title*="Action Potential"]');
       out.chipLine = chipBtn.parentElement.textContent.includes('IV') && chipBtn.parentElement.textContent.includes('PO');
       const html = card.innerHTML; out.warnBeforeDose = html.indexOf('rose-50/70') < html.indexOf('data-card-dose');
-      const footerChips = card.querySelector('[data-reg-chips]'); out.footerChips = !!footerChips && footerChips.parentElement.className.includes('border-t'); // country chips: the last row of the card
+      const footerChips = card.querySelector('[data-reg-chips]'); out.footerChips = !!footerChips && footerChips.parentElement.hasAttribute('data-chip-row') && footerChips.previousElementSibling && footerChips.previousElementSibling.hasAttribute('data-nlem-chip'); // country chips sit right after the NLEM chip, under the name
       // tools tile
       if (!q('[data-guide-buttons]') || q('[data-guide-buttons]').className.includes('hidden')) await click('[data-tools-toggle]'); // the phone check above left it collapsed (remembered)
       const tools = q('[data-guide-buttons]'); const open0 = !!tools && tools.className.includes('grid');
@@ -701,7 +701,7 @@ async function main() {
       const close = document.querySelector('.fixed button svg line[x1="18"]'); if (close) close.closest('button').click(); await wait(200);
       return out;
     })()`);
-    results.push({ test: 'Cards: Select with Details below at the top right, no Compare button on the card, Compare appears after two are selected, NLEM chip under the name', pass: sel.order === 'select>details' && sel.noCompareButton && sel.nlemUnderName && sel.oneSelected && sel.dockOne && sel.dockTwo && sel.detailOpened, detail: JSON.stringify(sel) });
+    results.push({ test: 'Cards: Select with Details below at the top right, no Compare button on the card, Compare appears after two are selected, NLEM chip and country chips on one line under the name', pass: sel.order === 'select>details' && sel.noCompareButton && sel.nlemUnderName && sel.oneSelected && sel.dockOne && sel.dockTwo && sel.detailOpened, detail: JSON.stringify(sel) });
 
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
