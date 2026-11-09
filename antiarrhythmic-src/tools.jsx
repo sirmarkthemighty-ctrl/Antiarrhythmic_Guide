@@ -31,9 +31,38 @@ function flagText(v, lang, yesEn, yesTh, noEn, noTh) {
 }
 const isUnknown = (t) => typeof t === 'string' && /^Unknown/.test(t);
 function V({ t }) {
-  if (isUnknown(t)) return <span className="italic text-slate-400" data-unknown>{t}</span>;
+  if (isUnknown(t)) return <span className="italic text-slate-500 dark:text-slate-400" data-unknown>{t}</span>;
   return <span>{t}</span>;
 }
+// Class colours as full static Tailwind strings (dynamic class names would not be generated).
+const CLASS_TONE = {
+  Ia: { icon: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300', chip: 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:hover:bg-amber-900 dark:text-amber-300 dark:border-amber-800', stripe: 'border-l-amber-400 dark:border-l-amber-500' },
+  Ib: { icon: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300', chip: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-950/40 dark:hover:bg-yellow-900/60 dark:text-yellow-300 dark:border-yellow-800', stripe: 'border-l-yellow-400 dark:border-l-yellow-500' },
+  Ic: { icon: 'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300', chip: 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/50 dark:hover:bg-rose-900 dark:text-rose-300 dark:border-rose-800', stripe: 'border-l-rose-400 dark:border-l-rose-500' },
+  II: { icon: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300', chip: 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/50 dark:hover:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-800', stripe: 'border-l-indigo-400 dark:border-l-indigo-500' },
+  III: { icon: 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300', chip: 'bg-purple-50 hover:bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/50 dark:hover:bg-purple-900 dark:text-purple-300 dark:border-purple-800', stripe: 'border-l-purple-400 dark:border-l-purple-500' },
+  IV: { icon: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300', chip: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:hover:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-800', stripe: 'border-l-emerald-400 dark:border-l-emerald-500' },
+  Other: { icon: 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300', chip: 'bg-sky-50 hover:bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/50 dark:hover:bg-sky-900 dark:text-sky-300 dark:border-sky-800', stripe: 'border-l-sky-400 dark:border-l-sky-500' }
+};
+const toneOf = (cls) => CLASS_TONE[cls] || CLASS_TONE.Other;
+
+// Generic dosage-form pictogram from the drug's routes (PO = oral, IV = injection). It is not a picture of any product:
+// the records hold no tablet/capsule/vial/bag detail and no product images.
+function DrugIcon({ routes, vwClass, size = 'md', lang }) {
+  const oral = routes.includes('PO'), inj = routes.includes('IV');
+  const th = lang === 'th';
+  const label = oral && inj ? (th ? 'ยารับประทานและยาฉีด' : 'Oral and injection') : inj ? (th ? 'ยาฉีด' : 'Injection') : (th ? 'ยารับประทาน' : 'Oral form');
+  const capsule = <g transform="rotate(-45 12 12)"><rect x="2.5" y="8" width="19" height="8" rx="4" /><path d="M12 8v8" /><path d="M12 8h5.5a4 4 0 0 1 0 8H12z" fill="currentColor" fillOpacity=".25" stroke="none" /></g>;
+  const vial = <g><path d="M9 2.5h6" /><path d="M10 2.5v3.2L7.5 9v10a2.5 2.5 0 0 0 2.5 2.5h4a2.5 2.5 0 0 0 2.5-2.5V9L14 5.7V2.5" /><path d="M7.5 12.5h9" /><path d="M12 14.6c-.9 1.1-1.3 1.7-1.3 2.2a1.3 1.3 0 0 0 2.6 0c0-.5-.4-1.1-1.3-2.2z" fill="currentColor" stroke="none" /></g>;
+  return (
+    <span className={'shrink-0 inline-flex items-center justify-center rounded-xl ' + (size === 'sm' ? 'w-8 h-8' : 'w-11 h-11') + ' ' + toneOf(vwClass).icon} title={label} data-drug-icon={(oral ? 'po' : '') + (oral && inj ? '+' : '') + (inj ? 'iv' : '')}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={size === 'sm' ? 'w-5 h-5' : 'w-6 h-6'} aria-hidden="true">
+        {oral && inj ? <><g transform="translate(-1 0) scale(.62)">{capsule}</g><g transform="translate(9.5 8.5) scale(.62)">{vial}</g></> : inj ? vial : capsule}
+      </svg>
+    </span>
+  );
+}
+
 // One guideline block of the Dosing tab: labelled rows from a guideline, or N/A, always with its source.
 function GuidelineBlock({ id, title, rows, naText, refKey, lang }) {
   return (
@@ -49,7 +78,7 @@ function GuidelineBlock({ id, title, rows, naText, refKey, lang }) {
           ))}
         </div>
       ) : (
-        <p className="font-medium italic text-slate-400">N/A {naText}</p>
+        <p className="font-medium italic text-slate-500 dark:text-slate-400">N/A {naText}</p>
       )}
       <SourceLine refs={[refKey]} lang={lang} />
     </div>
@@ -94,19 +123,19 @@ function ReferencesSection({ lang }) {
     <section className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 print:hidden" aria-labelledby="refs-heading" data-references>
       <h2 id="refs-heading" className="text-sm font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
         <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="refs-list" data-refs-toggle className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-          <span>{th ? 'เอกสารอ้างอิง' : 'References'} <span className="text-slate-400 font-bold normal-case tracking-normal">({keys.length})</span></span>
-          <span className={'text-slate-400 transition-transform ' + (open ? 'rotate-180' : '')} aria-hidden="true">▾</span>
+          <span>{th ? 'เอกสารอ้างอิง' : 'References'} <span className="text-slate-500 dark:text-slate-300 font-bold normal-case tracking-normal">({keys.length})</span></span>
+          <span className={'text-slate-500 dark:text-slate-300 transition-transform ' + (open ? 'rotate-180' : '')} aria-hidden="true">▾</span>
         </button>
       </h2>
       {open && (
         <div id="refs-list" className="mt-3">
           {groups.map(g => (
             <div key={g.id} className="mb-4" data-ref-group={g.id}>
-              <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 mb-2">{g.title} <span className="font-semibold text-slate-400">({g.ks.length})</span></h3>
+              <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 mb-2">{g.title} <span className="font-semibold text-slate-500 dark:text-slate-400">({g.ks.length})</span></h3>
             <ol className="flex flex-col gap-2.5">
               {g.ks.map((k) => (
                 <li key={k} className="flex gap-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed" data-ref-item>
-                  <span className="shrink-0 font-bold text-slate-400 tabular-nums w-6 text-right">{++n}.</span>
+                  <span className="shrink-0 font-bold text-slate-500 dark:text-slate-400 tabular-nums w-6 text-right">{++n}.</span>
                   <span className="min-w-0">
                     {SOURCES[k].title}{' '}
                     <a href={SOURCES[k].url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline break-all">{SOURCES[k].url}</a>
@@ -134,7 +163,7 @@ function SourceLine({ refs, lang }) {
         <span key={i}>
           {i > 0 && '; '}
           {x.s ? <a href={x.s.url} target="_blank" rel="noopener noreferrer" title={x.s.title} className="underline decoration-dotted hover:text-indigo-600 break-words">{x.s.short}</a> : <span>{x.k}</span>}
-          {x.note && <span className="text-slate-400"> ({x.note})</span>}
+          {x.note && <span className="text-slate-500 dark:text-slate-400"> ({x.note})</span>}
         </span>
       ))}
     </div>
@@ -282,10 +311,10 @@ function ApPhases({ drug, lang }) {
       {m && m.rows.map(row => (
         <div key={row.ph}><span className="font-semibold text-slate-500">{th ? row.phTh : row.ph}:</span> {th ? row.th : row.en}</div>
       ))}
-      {m && <div className="text-[11px] italic text-slate-400">{th ? 'ยาออกฤทธิ์ต่อช่องใดมาจากแหล่งอ้างอิง ส่วนการจัดช่องเข้า phase เป็นหลักไฟฟ้าสรีรวิทยามาตรฐาน phase ที่ไม่ได้แสดงคือแหล่งอ้างอิงไม่ได้ระบุ' : 'What the drug acts on comes from the source; placing it in a phase is standard electrophysiology. Phases not listed are not stated in the source.'}</div>}
+      {m && <div className="text-[11px] italic text-slate-500 dark:text-slate-400">{th ? 'ยาออกฤทธิ์ต่อช่องใดมาจากแหล่งอ้างอิง ส่วนการจัดช่องเข้า phase เป็นหลักไฟฟ้าสรีรวิทยามาตรฐาน phase ที่ไม่ได้แสดงคือแหล่งอ้างอิงไม่ได้ระบุ' : 'What the drug acts on comes from the source; placing it in a phase is standard electrophysiology. Phases not listed are not stated in the source.'}</div>}
       {m && <SourceLine refs={m.refs} lang={lang} />}
-      {!c && !m && <div className="italic text-slate-400">N/A {th ? '(ไม่พบกลไกของยานี้ในแหล่งอ้างอิงที่อ่าน)' : '(no mechanism for this drug in the sources read)'}</div>}
-      {c && <div className="text-[11px] italic text-slate-400">{th ? 'จากข้อมูลกลุ่มยา (Vaughan Williams) ไม่ใช่ข้อมูลเฉพาะตัวยา ไม่ได้ตรวจกับแหล่งอ้างอิง' : 'From the drug class (Vaughan Williams), not drug-specific; not checked against a source.'}</div>}
+      {!c && !m && <div className="italic text-slate-500 dark:text-slate-400">N/A {th ? '(ไม่พบกลไกของยานี้ในแหล่งอ้างอิงที่อ่าน)' : '(no mechanism for this drug in the sources read)'}</div>}
+      {c && <div className="text-[11px] italic text-slate-500 dark:text-slate-400">{th ? 'จากข้อมูลกลุ่มยา (Vaughan Williams) ไม่ใช่ข้อมูลเฉพาะตัวยา ไม่ได้ตรวจกับแหล่งอ้างอิง' : 'From the drug class (Vaughan Williams), not drug-specific; not checked against a source.'}</div>}
       {own.length > 0 && (
         <div className="pt-1 border-t border-slate-100 dark:border-slate-700">
           <span className="font-bold text-slate-500">{th ? 'ตามฉลากของยานี้' : 'Stated for this drug'}:</span>
@@ -437,7 +466,7 @@ function ActionPotentialModal({ isOpen, onClose, lang, initialClass = 'Ia' }) {
           {/* Per-drug values from the drug cards (Action Potential Modifications) */}
           {selectedClass !== 'normal' && (
             <div className="space-y-2" data-ap-drugs>
-              <span className="font-bold text-[10px] uppercase tracking-wide text-slate-400 block">{lang === 'th' ? 'ค่าของยาแต่ละตัวจากการ์ดยา (Action Potential Modifications)' : 'Per-drug values from the drug cards'}</span>
+              <span className="font-bold text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 block">{lang === 'th' ? 'ค่าของยาแต่ละตัวจากการ์ดยา (Action Potential Modifications)' : 'Per-drug values from the drug cards'}</span>
               {DRUGS_DATA.filter(d => d.vwClass === selectedClass).map(d => (
                 <div key={d.id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-1" data-ap-drug>
                   <span className="font-bold text-slate-800 dark:text-slate-100">{d.genericName}</span>
@@ -456,7 +485,7 @@ function ActionPotentialModal({ isOpen, onClose, lang, initialClass = 'Ia' }) {
           </div>
           <div className="pt-1">
             <SourceLine refs={[]} lang={lang} />
-            <p className="text-[11px] italic text-slate-400">{lang === 'th' ? 'ภาพประกอบเพื่อการสอนระดับกลุ่มยา ไม่ได้ตรวจกับแหล่งอ้างอิง' : 'Class-level teaching drawing; not checked against a source.'}</p>
+            <p className="text-[11px] italic text-slate-500 dark:text-slate-400">{lang === 'th' ? 'ภาพประกอบเพื่อการสอนระดับกลุ่มยา ไม่ได้ตรวจกับแหล่งอ้างอิง' : 'Class-level teaching drawing; not checked against a source.'}</p>
           </div>
         </div>
 
@@ -617,7 +646,7 @@ function GuidelineNavigatorModal({ isOpen, onClose, lang }) {
                 onClick={() => setActivePathway(k)}
                 className={`p-3 rounded-xl border text-left flex flex-col gap-1.5 transition-all ${activePathway === k ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
               >
-                <Icon className={`w-4 h-4 ${activePathway === k ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${activePathway === k ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="font-bold text-xs leading-snug">{label}</span>
               </button>
             ))}
@@ -764,19 +793,19 @@ function TisdaleRiskModal({ isOpen, onClose, lang }) {
             {/* QTc Results Output */}
             <div className="grid grid-cols-3 gap-2 pt-2">
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Bazett</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Bazett</span>
                 <span className={`text-base sm:text-lg font-extrabold ${qtcBazett >= 500 ? 'text-rose-600' : qtcBazett >= 460 ? 'text-amber-600' : 'text-emerald-600'}`}>
                   {qtcBazett} <small className="text-xs font-normal">ms</small>
                 </span>
               </div>
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Fridericia (Rec.)</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Fridericia (Rec.)</span>
                 <span className={`text-base sm:text-lg font-extrabold ${qtcFridericia >= 500 ? 'text-rose-600' : qtcFridericia >= 460 ? 'text-amber-600' : 'text-emerald-600'}`}>
                   {qtcFridericia} <small className="text-xs font-normal">ms</small>
                 </span>
               </div>
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Framingham</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Framingham</span>
                 <span className={`text-base sm:text-lg font-extrabold ${qtcFramingham >= 500 ? 'text-rose-600' : qtcFramingham >= 460 ? 'text-amber-600' : 'text-emerald-600'}`}>
                   {qtcFramingham} <small className="text-xs font-normal">ms</small>
                 </span>
@@ -1178,7 +1207,7 @@ function OrganDosingModal({ isOpen, onClose, lang, drugs }) {
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100">{d.genericName}</span>
-                    <span className="text-xs text-slate-400">({d.brandNames.join(', ')})</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">({d.brandNames.join(', ')})</span>
                   </div>
                   <span className="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                     {d.classFullName.split(' - ')[0]}
@@ -1188,23 +1217,23 @@ function OrganDosingModal({ isOpen, onClose, lang, drugs }) {
                 {/* Renal Tiers */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 text-xs">
                   <div className="p-2 bg-slate-50 dark:bg-slate-750 rounded-lg">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">CrCl &gt; 50</span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">CrCl &gt; 50</span>
                     <p className="font-medium text-slate-700 dark:text-slate-200 mt-0.5"><V t={d.renalAdjustment.crcl50} /></p>
                   </div>
                   <div className="p-2 bg-slate-50 dark:bg-slate-750 rounded-lg">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">CrCl 30-50</span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">CrCl 30-50</span>
                     <p className="font-medium text-slate-700 dark:text-slate-200 mt-0.5"><V t={d.renalAdjustment.crcl30_50} /></p>
                   </div>
                   <div className="p-2 bg-slate-50 dark:bg-slate-750 rounded-lg">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">CrCl 10-30</span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">CrCl 10-30</span>
                     <p className="font-medium text-slate-700 dark:text-slate-200 mt-0.5"><V t={d.renalAdjustment.crcl10_30} /></p>
                   </div>
                   <div className="p-2 bg-slate-50 dark:bg-slate-750 rounded-lg">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">CrCl &lt; 10 / ESRD</span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">CrCl &lt; 10 / ESRD</span>
                     <p className="font-medium text-slate-700 dark:text-slate-200 mt-0.5"><V t={d.renalAdjustment.crclLess10} /></p>
                   </div>
                   <div className="p-2 bg-slate-50 dark:bg-slate-750 rounded-lg">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Hemodialysis (HD)</span>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block">Hemodialysis (HD)</span>
                     <p className="font-medium text-slate-700 dark:text-slate-200 mt-0.5"><V t={d.renalAdjustment.hd} /></p>
                   </div>
                 </div>
@@ -1382,20 +1411,20 @@ function CompareModal({ isOpen, onClose, lang, compareList, onRemove }) {
         {/* Content Table */}
         <div className="p-4 sm:p-6 overflow-x-auto overflow-y-auto flex-1">
           {compareList.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-sm">
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400 text-sm">
               {lang === 'th' ? "ยังไม่ได้เลือกยาเพื่อเปรียบเทียบ (เลือกยาจากการ์ดหรือตารางได้สูงสุด 3 ชนิด)" : "No drugs selected for comparison. Select up to 3 drugs from the cards or list."}
             </div>
           ) : (
             <table className="w-full border-collapse text-left text-xs min-w-[700px]">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-750">
-                  <th className="p-3 bg-slate-50 dark:bg-slate-800/80 font-bold text-slate-400 uppercase text-[10px] w-48">Parameter</th>
+                  <th className="p-3 bg-slate-50 dark:bg-slate-800/80 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] w-48">Parameter</th>
                   {compareList.map((d) => (
                     <th key={d.id} className="p-3 bg-slate-50 dark:bg-slate-800/80 font-bold text-slate-800 dark:text-slate-100 text-sm">
                       <div className="flex items-center justify-between">
                         <div>
                           <span>{d.genericName}</span>
-                          <span className="block text-[11px] font-normal text-slate-400">{d.brandNames[0]}</span>
+                          <span className="block text-[11px] font-normal text-slate-500 dark:text-slate-400">{d.brandNames[0]}</span>
                         </div>
                         <button onClick={() => onRemove(d.id)} className="text-slate-400 hover:text-rose-500 p-1">
                           <X className="w-3.5 h-3.5" />
@@ -1438,7 +1467,7 @@ function CompareModal({ isOpen, onClose, lang, compareList, onRemove }) {
                   <td className="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-800/30">{lang === 'th' ? 'HFrEF (ตามแหล่งอ้างอิง)' : 'HFrEF (per sources)'}</td>
                   {compareList.map(d => (
                     <td key={d.id} className="p-3">
-                      <span className={`inline-flex items-center gap-1 font-bold ${d.safeInHfref === true ? 'text-emerald-600 dark:text-emerald-400' : d.safeInHfref === false ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`}>
+                      <span className={`inline-flex items-center gap-1 font-bold ${d.safeInHfref === true ? 'text-emerald-600 dark:text-emerald-400' : d.safeInHfref === false ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {d.safeInHfref === true ? <Check className="w-3.5 h-3.5" /> : d.safeInHfref === false ? <X className="w-3.5 h-3.5" /> : null}
                         {flagText(d.safeInHfref, lang, 'No caution found', 'ไม่พบข้อควรระวัง', 'Caution / avoid', 'ระวัง / หลีกเลี่ยง')}
                       </span>
@@ -1449,7 +1478,7 @@ function CompareModal({ isOpen, onClose, lang, compareList, onRemove }) {
                   <td className="p-3 font-bold text-slate-500 bg-slate-50/50 dark:bg-slate-800/30">{lang === 'th' ? 'CAD / หลัง MI (ตามแหล่งอ้างอิง)' : 'CAD / post-MI (per sources)'}</td>
                   {compareList.map(d => (
                     <td key={d.id} className="p-3">
-                      <span className={`inline-flex items-center gap-1 font-bold ${d.safeCad === true ? 'text-emerald-600 dark:text-emerald-400' : d.safeCad === false ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`}>
+                      <span className={`inline-flex items-center gap-1 font-bold ${d.safeCad === true ? 'text-emerald-600 dark:text-emerald-400' : d.safeCad === false ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {d.safeCad === true ? <Check className="w-3.5 h-3.5" /> : d.safeCad === false ? <X className="w-3.5 h-3.5" /> : null}
                         {flagText(d.safeCad, lang, 'No caution found', 'ไม่พบข้อควรระวัง', 'Caution / avoid', 'ระวัง / หลีกเลี่ยง')}
                       </span>
@@ -1516,9 +1545,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
-              <BookOpen className="w-5 h-5" />
-            </div>
+            <DrugIcon routes={drug.routes} vwClass={drug.vwClass} lang={lang} />
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-slate-100">
@@ -1562,13 +1589,13 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
           {activeTab === 'overview' && (
             <div className="space-y-4">
               <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/60 space-y-1">
-                <span className="font-bold text-xs uppercase text-slate-400 block">Primary Target & Channel Mechanism</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Primary Target & Channel Mechanism</span>
                 <p className="font-semibold text-slate-800 dark:text-slate-200"><V t={drug.primaryTarget} /></p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 space-y-2">
-                  <span className="font-bold text-xs uppercase text-slate-400 block">Action Potential Modifications</span>
+                  <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Action Potential Modifications</span>
                   <div className="space-y-1 text-xs">
                     <ApPhases drug={drug} lang={lang} />
                   </div>
@@ -1576,7 +1603,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
                 </div>
 
                 <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 space-y-2">
-                  <span className="font-bold text-xs uppercase text-slate-400 block">Surface ECG Manifestations</span>
+                  <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Surface ECG Manifestations</span>
                   <div className="space-y-1 text-xs">
                     <div><span className="font-semibold text-slate-500">PR Interval:</span> <V t={drug.ecgEffects.pr} /></div>
                     <div><span className="font-semibold text-slate-500">QRS Duration:</span> <V t={drug.ecgEffects.qrs} /></div>
@@ -1587,7 +1614,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
               </div>
 
               <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 space-y-2">
-                <span className="font-bold text-xs uppercase text-slate-400 block">Pharmacokinetic Profile</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Pharmacokinetic Profile</span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                   <div><span className="font-semibold text-slate-500 block">Onset:</span> <V t={drug.pharmacokinetics.onset} /></div>
                   <div><span className="font-semibold text-slate-500 block">Peak:</span> <V t={drug.pharmacokinetics.peak} /></div>
@@ -1604,7 +1631,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
               <SourceLine refs={drug.refs.mech} lang={lang} />
               <SourceLine refs={drug.refs.pk} lang={lang} />
               <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 space-y-1 text-xs mt-2" data-flags>
-                <span className="font-bold text-xs uppercase text-slate-400 block">{lang === 'th' ? 'ข้อควรระวังตามแหล่งอ้างอิง' : 'Safety flags from the sources'}</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">{lang === 'th' ? 'ข้อควรระวังตามแหล่งอ้างอิง' : 'Safety flags from the sources'}</span>
                 <div><span className="font-semibold text-slate-500">HFrEF: </span>{flagText(drug.safeInHfref, lang, 'No caution found', 'ไม่พบข้อควรระวัง', 'Caution / avoid', 'ระวัง / หลีกเลี่ยง')}</div>
                 <div><span className="font-semibold text-slate-500">CAD / post-MI: </span>{flagText(drug.safeCad, lang, 'No caution found', 'ไม่พบข้อควรระวัง', 'Caution / avoid', 'ระวัง / หลีกเลี่ยง')}</div>
                 <div><span className="font-semibold text-slate-500">QT: </span>{qtLabel(drug.qtRisk, lang)}</div>
@@ -1622,16 +1649,16 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
                     {drug.mims.rows.map((row, i) => (
                       <div key={i} className="pl-3 border-l-2 border-indigo-300 dark:border-indigo-700" data-mims-row>
                         <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300">{lang === 'th' ? row.lTh : row.lEn}</div>
-                        <p className={`text-sm leading-relaxed ${drug.mims.na ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>{lang === 'th' ? row.th : row.en}</p>
+                        <p className={`text-sm leading-relaxed ${drug.mims.na ? 'text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>{lang === 'th' ? row.th : row.en}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="font-medium italic text-slate-400">N/A</p>
+                  <p className="font-medium italic text-slate-500 dark:text-slate-400">N/A</p>
                 )}
                 <div className="text-xs text-slate-600 dark:text-slate-300" data-mims-brands>
                   <span className="font-bold text-slate-500">{lang === 'th' ? 'ชื่อการค้าในไทย (MIMS): ' : 'Thai brands (MIMS): '}</span>
-                  {drug.thaiBrands.length ? drug.thaiBrands.join(', ') + (drug.thaiBrandsPartial ? (lang === 'th' ? ' และอื่น ๆ (ดูใน MIMS)' : ' and more (see MIMS)') : '') : <span className="italic text-slate-400">{lang === 'th' ? 'MIMS ไม่มีรายชื่อ' : 'none listed in MIMS'}</span>}
+                  {drug.thaiBrands.length ? drug.thaiBrands.join(', ') + (drug.thaiBrandsPartial ? (lang === 'th' ? ' และอื่น ๆ (ดูใน MIMS)' : ' and more (see MIMS)') : '') : <span className="italic text-slate-500 dark:text-slate-400">{lang === 'th' ? 'MIMS ไม่มีรายชื่อ' : 'none listed in MIMS'}</span>}
                 </div>
                 <SourceLine refs={['mims:' + drug.id]} lang={lang} />
               </div>
@@ -1653,7 +1680,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
               </div>
 
               <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/60">
-                <span className="font-bold text-xs uppercase text-slate-400 block mb-1">Available Routes</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block mb-1">Available Routes</span>
                 <div className="flex gap-2">
                   {drug.routes.map(r => (
                     <span key={r} className="px-2.5 py-1 rounded-md text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100">
@@ -1670,26 +1697,26 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
           {activeTab === 'organ' && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <span className="font-bold text-xs uppercase text-slate-400 block">Renal Clearance Adjustments</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Renal Clearance Adjustments</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-400 block text-[10px]">CrCl &gt; 50 mL/min:</span>
+                    <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">CrCl &gt; 50 mL/min:</span>
                     <p className="font-medium text-slate-700 dark:text-slate-300 mt-1"><V t={drug.renalAdjustment.crcl50} /></p>
                   </div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-400 block text-[10px]">CrCl 30-50 mL/min:</span>
+                    <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">CrCl 30-50 mL/min:</span>
                     <p className="font-medium text-slate-700 dark:text-slate-300 mt-1"><V t={drug.renalAdjustment.crcl30_50} /></p>
                   </div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-400 block text-[10px]">CrCl 10-30 mL/min:</span>
+                    <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">CrCl 10-30 mL/min:</span>
                     <p className="font-medium text-slate-700 dark:text-slate-300 mt-1"><V t={drug.renalAdjustment.crcl10_30} /></p>
                   </div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-400 block text-[10px]">CrCl &lt; 10 mL/min:</span>
+                    <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">CrCl &lt; 10 mL/min:</span>
                     <p className="font-medium text-slate-700 dark:text-slate-300 mt-1"><V t={drug.renalAdjustment.crclLess10} /></p>
                   </div>
                   <div className="sm:col-span-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span className="font-bold text-slate-400 block text-[10px]">Hemodialysis Clearance:</span>
+                    <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">Hemodialysis Clearance:</span>
                     <p className="font-medium text-slate-700 dark:text-slate-300 mt-1"><V t={drug.renalAdjustment.hd} /></p>
                   </div>
                 </div>
@@ -1751,7 +1778,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
           {activeTab === 'interactions' && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <span className="font-bold text-xs uppercase text-slate-400 block">Drug-Drug Interactions</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Drug-Drug Interactions</span>
                 {drug.interactions.map((it, i) => (
                   <div key={i} className="p-3 rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-700 dark:text-slate-300">
                     <V t={it} />
@@ -1775,7 +1802,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
           {activeTab === 'nlem' && (
             <div className="space-y-3" data-nlem>
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/60 space-y-2">
-                <span className="font-bold text-xs uppercase text-slate-400 block">{lang === 'th' ? 'บัญชียาหลักแห่งชาติ พ.ศ. 2569' : 'Thai National List of Essential Medicines 2569 (2026)'}</span>
+                <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">{lang === 'th' ? 'บัญชียาหลักแห่งชาติ พ.ศ. 2569' : 'Thai National List of Essential Medicines 2569 (2026)'}</span>
                 <span className={`inline-block px-2.5 py-1 rounded-md font-extrabold text-xs ${drug.nlem.list ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>{nlemText(drug.nlem, lang)}</span>
                 {(drug.nlem.items || []).map((it, i) => (
                   <div key={i} className="text-xs text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-slate-700 pt-2">

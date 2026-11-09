@@ -37,7 +37,7 @@ const Sliders = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" view
     'bg-slate-50/50': 'background-color:rgba(16,26,43,.5)', 'bg-slate-100': 'background-color:#0b1220',
     'bg-slate-100/95': 'background-color:rgba(11,18,32,.95)', 'bg-slate-200': 'background-color:#24324a',
     'text-slate-900': 'color:#f1f5f9', 'text-slate-800': 'color:#e2e8f0', 'text-slate-700': 'color:#cbd5e1',
-    'text-slate-600': 'color:#a8b4c6', 'text-slate-500': 'color:#94a3b8', 'text-slate-400': 'color:#7d8ba1',
+    'text-slate-600': 'color:#a8b4c6', 'text-slate-500': 'color:#94a3b8', 'text-slate-500 dark:text-slate-400': 'color:#7d8ba1',
     'text-slate-300': 'color:#4a5a73', 'text-slate-200': 'color:#33425a',
     'border-slate-100': 'border-color:#1d2940', 'border-slate-200': 'border-color:#263449',
     'border-slate-200/50': 'border-color:rgba(38,52,73,.5)', 'border-slate-300': 'border-color:#33435c',
@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "Every drug now has a dosage-form icon (oral, injection, or both) tinted by its class; tile cards have a class colour edge, a bigger name, one merged brand line, and show the first MIMS dose line with the rest on tap. On phones the list view is a compact row list with no sideways scroll.",
       "Tile cards now show the adult dose from MIMS Thailand, one line for each indication or route, in full (the same rows as the Dosing tab).",
       "The sort order, grid or list view and folded class groups are now remembered in this browser, like Group by class.",
       "Third guideline block in the Dosing tab: the 2019 ESC supraventricular tachycardia guideline for the 13 drugs it names (recommendation class and level, the doses it gives); the other 14 show N/A. Added to the references.",
@@ -86,6 +87,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "ยาทุกตัวมีไอคอนรูปแบบยา (รับประทาน ฉีด หรือทั้งสอง) ใช้สีตามกลุ่มยา การ์ด tile มีแถบสีกลุ่มยาด้านซ้าย ชื่อยาใหญ่ขึ้น บรรทัดชื่อการค้ารวมกัน และแสดงขนาดยาบรรทัดแรกของ MIMS ส่วนที่เหลือแตะเพื่อดู บนมือถือมุมมองรายการเป็นแถวกะทัดรัดไม่ต้องเลื่อนซ้ายขวา",
       "การ์ดแบบ tile แสดงขนาดยาผู้ใหญ่จาก MIMS Thailand แยกบรรทัดตามข้อบ่งใช้หรือทางให้ยา ครบทั้งข้อความ (เป็นแถวเดียวกับแท็บขนาดยา)",
       "จดจำการเรียงลำดับ มุมมองกริดหรือรายการ และกลุ่มยาที่พับไว้ในเบราว์เซอร์นี้ เช่นเดียวกับปุ่มจัดกลุ่มตามกลุ่มยา",
       "เพิ่มส่วนที่สามในแท็บขนาดยา สรุปแนวทาง ESC 2019 สำหรับ supraventricular tachycardia ของยา 13 ตัวที่แนวทางระบุ (ระดับคำแนะนำ และขนาดยาที่แนวทางให้ไว้) ยาอีก 14 ตัวแสดง N/A และเพิ่มในเอกสารอ้างอิง",
@@ -239,6 +241,8 @@ function App() {
   const [selectedClasses, setSelectedClasses] = useState([]);
   const toggleClass = (val) => setSelectedClasses(c => val === 'all' ? [] : c.includes(val) ? c.filter(x => x !== val) : [...c, val]);
   const [groupByClass, setGroupByClass] = useState(() => { try { return localStorage.getItem('aag-group') === '1'; } catch (e) { return false; } });
+  const [doseOpen, setDoseOpen] = useState({});
+  const toggleDose = (id, e) => { e.stopPropagation(); setDoseOpen(o => ({ ...o, [id]: !o[id] })); };
   const [collapsed, setCollapsed] = useState(() => { try { const o = JSON.parse(localStorage.getItem('aag-fold') || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } });
   useEffect(() => { try { localStorage.setItem('aag-fold', JSON.stringify(collapsed)); } catch (e) {} }, [collapsed]);
   const toggleFold = (cls) => setCollapsed(c => ({ ...c, [cls]: !c[cls] }));
@@ -409,7 +413,7 @@ function App() {
     const btn = (
       <button type="button" onClick={() => toggleFold(drug.vwClass)} aria-expanded={open} data-fold={drug.vwClass} className={'w-full flex items-center gap-2 text-left cursor-pointer ' + cls}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={'w-3.5 h-3.5 shrink-0 transition-transform ' + (open ? '' : '-rotate-90')} aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        <span>{label} <span className="font-semibold text-slate-400">({n})</span></span>
+        <span>{label} <span className="font-semibold text-slate-500 dark:text-slate-400">({n})</span></span>
       </button>
     );
     return kind === 'tr'
@@ -440,7 +444,7 @@ function App() {
           <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-800 dark:text-slate-100 mb-1 md:mb-2 leading-tight sm:pr-32 md:pr-48">{t.title}</h1>
           <p className="hidden sm:block text-xs md:text-sm text-slate-600 dark:text-slate-400" data-subtitle>{t.subtitle}</p>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 sm:block" data-credit-line>
-            <p className="text-[10px] md:text-xs font-semibold text-indigo-500 sm:mt-1">Made by Warodom Phaenthong, M.D.</p>
+            <p className="text-[10px] md:text-xs font-semibold text-indigo-600 dark:text-indigo-400 sm:mt-1">Made by Warodom Phaenthong, M.D.</p>
             <a href="#disclaimer-heading" onClick={(e) => { e.preventDefault(); document.getElementById('disclaimer-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} className="block sm:mt-1 text-[11px] md:text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline print:hidden">{t.discLink}</a>
           </div>
         </header>
@@ -610,7 +614,7 @@ function App() {
                     <button
                       key={val}
                       onClick={() => setSelectedIndication(val)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${selectedIndication === val ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${selectedIndication === val ? 'bg-emerald-700 text-white border-emerald-700 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'}`}
                     >
                       {lbl}
                     </button>
@@ -679,7 +683,7 @@ function App() {
 
         {/* Counter & Print Link Bar */}
         <div className="flex items-start justify-between gap-2 px-1">
-          <div className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 min-w-0 pt-0.5" aria-live="polite">
+          <div className="text-[11px] md:text-xs text-slate-600 dark:text-slate-400 min-w-0 pt-0.5" aria-live="polite">
             {t.showingCount} <strong className="font-bold text-slate-800 dark:text-slate-200 tabular-nums">{filteredDrugs.length}</strong> {t.ofDrugs} <span className="font-bold text-slate-800 dark:text-slate-200 tabular-nums">{DRUGS_DATA.length}</span> {t.drugsLabel}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -717,14 +721,16 @@ function App() {
                 {!hidden && <article
                   data-drug-id={drug.id}
                   onClick={() => setDetailDrug(drug)}
-                  className="bg-white dark:bg-slate-850 rounded-2xl border border-slate-200/90 dark:border-slate-750/90 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3 group"
+                  className={'bg-white dark:bg-slate-850 rounded-2xl border border-l-4 border-slate-200/90 dark:border-slate-750/90 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3 group ' + toneOf(drug.vwClass).stripe}
                 >
                   {/* Card Top */}
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="flex items-start gap-2.5 min-w-0">
+                      <DrugIcon routes={drug.routes} vwClass={drug.vwClass} lang={lang} />
+                      <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-extrabold text-base text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          <span className="font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                             {drug.genericName}
                           </span>
                           <button
@@ -734,16 +740,18 @@ function App() {
                               openApModal(drug.vwClass);
                             }}
                             title={`Click to view Class ${drug.vwClass} Action Potential (AP) curve`}
-                            className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all flex items-center gap-1 cursor-pointer group/ap"
+                            className={'text-[11px] font-bold px-2 py-0.5 rounded-md border transition-all flex items-center gap-1 cursor-pointer group/ap ' + toneOf(drug.vwClass).chip}
                           >
                             <span>Class {drug.vwClass}</span>
                             <Zap className="w-2.5 h-2.5 text-amber-500 group-hover/ap:scale-110 transition-transform" />
                           </button>
                         </div>
-                        <p className="text-xs text-slate-400 font-medium">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2">
                           {drug.brandNames.join(', ')}
+                          {drug.brandNames.length > 0 && drug.thaiBrands.length > 0 && ' · '}
+                          {drug.thaiBrands.length > 0 && <span data-thai-brands>TH: {drug.thaiBrands.slice(0, 4).join(', ')}{drug.thaiBrands.length > 4 ? ` +${drug.thaiBrands.length - 4}` : ''}</span>}
                         </p>
-                        {drug.thaiBrands.length > 0 && <p className="text-[11px] text-slate-400" data-thai-brands>TH: {drug.thaiBrands.slice(0, 4).join(', ')}{drug.thaiBrands.length > 4 ? ` +${drug.thaiBrands.length - 4}` : ''}</p>}
+                      </div>
                       </div>
 
                       {/* Routes Badges */}
@@ -758,7 +766,7 @@ function App() {
 
                     {/* Target / Channel */}
                     <div className="text-xs">
-                      <span className="text-slate-400 font-medium text-[11px] block">{t.targetLabel}:</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px] block">{t.targetLabel}:</span>
                       <span className="font-semibold text-slate-700 dark:text-slate-300 leading-snug line-clamp-1">
                         {drug.primaryTarget}
                       </span>
@@ -773,16 +781,21 @@ function App() {
                       ))}
                     </div>
 
-                    {/* Adult dose per MIMS Thailand, one line per indication or route (full text, same rows as the Dosing tab) */}
+                    {/* Adult dose per MIMS Thailand: the first row, the rest on tap (full text, one line per indication or route) */}
                     {drug.mims && (
                       <div className="p-2 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 space-y-1.5" data-card-dose>
                         <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-300 block">{lang === 'th' ? 'ขนาดยาผู้ใหญ่ (MIMS)' : 'Adult dose (MIMS)'}</span>
-                        {drug.mims.rows.map((row, i) => (
+                        {(doseOpen[drug.id] ? drug.mims.rows : drug.mims.rows.slice(0, 1)).map((row, i) => (
                           <div key={i} className="text-[11px] leading-snug" data-card-dose-row>
                             <span className="font-bold text-indigo-700 dark:text-indigo-300">{lang === 'th' ? row.lTh : row.lEn}:</span>{' '}
-                            <span className={drug.mims.na ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}>{lang === 'th' ? row.th : row.en}</span>
+                            <span className={drug.mims.na ? 'text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}>{lang === 'th' ? row.th : row.en}</span>
                           </div>
                         ))}
+                        {drug.mims.rows.length > 1 && (
+                          <button type="button" onClick={(e) => toggleDose(drug.id, e)} aria-expanded={!!doseOpen[drug.id]} data-dose-toggle className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:underline">
+                            {doseOpen[drug.id] ? (lang === 'th' ? 'ซ่อน' : 'Show less') : (lang === 'th' ? `ดูขนาดยาทั้ง ${drug.mims.rows.length} รายการ` : `All ${drug.mims.rows.length} doses`)} {doseOpen[drug.id] ? '▴' : '▾'}
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -795,7 +808,7 @@ function App() {
 
                   {/* Card Bottom / Action Row */}
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} title={nlemText(drug.nlem, lang)}>
+                    <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`} title={nlemText(drug.nlem, lang)}>
                       {nlemShort(drug.nlem, lang)}
                     </span>
 
@@ -812,12 +825,47 @@ function App() {
               );
             })}
           </div>
+        ) : isPhone ? (
+          /* Phone list: compact rows, no sideways scroll */
+          <div className="space-y-2" data-phone-list>
+            {shownDrugs.map((drug, idx) => {
+              const isCompared = compareIds.includes(drug.id);
+              const hidden = groupByClass && collapsed[drug.vwClass];
+              return (
+                <React.Fragment key={drug.id}>
+                {groupHeader(drug, idx, 'div')}
+                {!hidden && <div
+                  role="button" tabIndex={0} data-phone-row
+                  onClick={() => setDetailDrug(drug)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') setDetailDrug(drug); }}
+                  className={'bg-white dark:bg-slate-850 rounded-xl border border-l-4 border-slate-200 dark:border-slate-750 p-2.5 shadow-sm flex items-start gap-2.5 cursor-pointer ' + toneOf(drug.vwClass).stripe}
+                >
+                  <DrugIcon routes={drug.routes} vwClass={drug.vwClass} size="sm" lang={lang} />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">{drug.genericName}</span>
+                      <span className={'text-[10px] font-bold px-1.5 py-0.5 rounded-md border ' + toneOf(drug.vwClass).chip}>Class {drug.vwClass}</span>
+                      {drug.routes.map(r => (
+                        <span key={r} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${r === 'IV' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300'}`}>{r}</span>
+                      ))}
+                    </div>
+                    {drug.mims && <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-200 line-clamp-2"><span className="font-bold text-indigo-700 dark:text-indigo-300">{lang === 'th' ? drug.mims.rows[0].lTh : drug.mims.rows[0].lEn}:</span> {lang === 'th' ? drug.mims.rows[0].th : drug.mims.rows[0].en}</p>}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>{nlemShort(drug.nlem, lang)}</span>
+                      <button onClick={(e) => toggleCompare(drug.id, e)} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${isCompared ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>{isCompared ? t.compared : t.compareBtn}</button>
+                    </div>
+                  </div>
+                </div>}
+                </React.Fragment>
+              );
+            })}
+          </div>
         ) : (
           /* Table View List */
           <div className="bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-750 overflow-x-auto shadow-sm">
             <table className="w-full text-left text-xs min-w-[750px]">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-400 font-bold uppercase text-[10px]">
+                <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">
                   <th className="p-3 w-16">Class</th>
                   <th className="p-3">Generic & Brand</th>
                   <th className="p-3">Routes</th>
@@ -854,8 +902,8 @@ function App() {
                       </td>
                       <td className="p-3">
                         <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100 block">{drug.genericName}</span>
-                        <span className="text-[11px] text-slate-400">{drug.brandNames.join(', ')}</span>
-                        {drug.thaiBrands.length > 0 && <span className="block text-[11px] text-slate-400" data-thai-brands>TH: {drug.thaiBrands.slice(0, 3).join(', ')}{drug.thaiBrands.length > 3 ? ` +${drug.thaiBrands.length - 3}` : ''}</span>}
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">{drug.brandNames.join(', ')}</span>
+                        {drug.thaiBrands.length > 0 && <span className="block text-[11px] text-slate-500 dark:text-slate-400" data-thai-brands>TH: {drug.thaiBrands.slice(0, 3).join(', ')}{drug.thaiBrands.length > 3 ? ` +${drug.thaiBrands.length - 3}` : ''}</span>}
                       </td>
                       <td className="p-3">
                         <div className="flex gap-1">
@@ -866,7 +914,7 @@ function App() {
                       </td>
                       <td className="p-3">
                         <span className="font-semibold block line-clamp-1">{drug.primaryTarget}</span>
-                        <span className="text-slate-400 text-[10px]">APD: {drug.actionPotential.apd}</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[10px]">APD: {drug.actionPotential.apd}</span>
                       </td>
                       <td className="p-3 max-w-xs">
                         <span className="text-[11px] text-rose-600 dark:text-rose-400 line-clamp-1 font-medium">{drug.cautionsAndWarnings[0]}</span>
@@ -891,14 +939,14 @@ function App() {
 
         {/* Clinical Disclaimer & Citations Footer */}
         <footer id="disclaimer-heading" className="mt-8 p-6 bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-750 space-y-3">
-          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
             <Info className="w-5 h-5 shrink-0" />
             <h3 className="font-bold text-sm">{t.disclaimerHeading}</h3>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
             {t.disclaimerText}
           </p>
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
             <span>{lang === 'th' ? 'แหล่งอ้างอิง: ฉลากยา FDA/EMA • AHA 2025 • ACC/AHA 2023 AF • AHA/ACC/HRS 2017 VA • บัญชียาหลักแห่งชาติ 2569' : 'Sources: FDA/EMA labels • AHA 2025 • ACC/AHA 2023 AF • AHA/ACC/HRS 2017 VA • Thai NLEM 2569'}</span>
             <button onClick={() => setIsChangelogOpen(true)} className="hover:text-indigo-600 underline-offset-2 hover:underline">{t.versionLabel} {APP_VERSION}</button>
           </div>
@@ -957,7 +1005,7 @@ function App() {
                     {idx === 0 && <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-xl uppercase tracking-widest">{t.latest}</div>}
                     <div className="flex items-baseline justify-between gap-3 mb-3 border-b border-slate-100 dark:border-slate-700 pb-3 pr-14">
                       <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-100">{log.version}</h3>
-                      <span className="text-xs font-bold text-slate-400">{lang === 'th' ? log.dateTh : log.date}</span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{lang === 'th' ? log.dateTh : log.date}</span>
                     </div>
                     {feats.length > 0 && (
                       <div className="mb-4">

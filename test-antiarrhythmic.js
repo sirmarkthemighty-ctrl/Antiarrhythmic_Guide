@@ -435,7 +435,7 @@ async function main() {
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
       const sel = document.querySelector('[data-sort] select');
       const setSort = async (v) => { const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(sel, v); sel.dispatchEvent(new Event('change', { bubbles: true })); await wait(250); };
-      const names = () => Array.from(document.querySelectorAll('article span.font-extrabold.text-base')).map(e => e.textContent.trim()).filter(Boolean);
+      const names = () => Array.from(document.querySelectorAll('article span.font-extrabold.text-lg')).map(e => e.textContent.trim()).filter(Boolean);
       await setSort('nameAsc'); const az = names();
       await setSort('nameDesc'); const za = names();
       await setSort('classAsc');
@@ -449,7 +449,7 @@ async function main() {
       const input = document.querySelector('[data-search-box] input');
       const setVal = async (v) => { const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, v); input.dispatchEvent(new Event('input', { bubbles: true })); await wait(250); };
       await setVal('Betaloc');
-      const names = Array.from(document.querySelectorAll('article span.font-extrabold.text-base')).map(e => e.textContent.trim());
+      const names = Array.from(document.querySelectorAll('article span.font-extrabold.text-lg')).map(e => e.textContent.trim());
       const cardLine = !!document.querySelector('article [data-thai-brands]');
       document.querySelector('article').click(); await wait(300);
       Array.from(document.querySelectorAll('.fixed button')).find(b => /^Dosing/.test(b.textContent.trim())).click(); await wait(250);
@@ -571,15 +571,47 @@ async function main() {
     })()`);
     results.push({ test: 'Sort order, list view and a folded class group are remembered after a reload', pass: remembered.sort === 'nameDesc' && remembered.list === 'true' && remembered.folded === 'false', detail: JSON.stringify(remembered) });
 
-    // Tile cards show the MIMS dose, one line per indication or route
-    const cardDose = await evaluate(`(() => {
+    // Every card has a dosage-form icon matching its routes
+    const icons = await evaluate(`(() => {
       const cards = Array.from(document.querySelectorAll('article'));
-      const withDose = cards.filter(c => c.querySelector('[data-card-dose]')).length;
-      const find = (name) => cards.find(c => c.textContent.includes(name));
-      const amio = find('Amiodarone');
-      return { cards: cards.length, withDose, amioRows: amio ? amio.querySelectorAll('[data-card-dose-row]').length : -1, procRows: find('Procainamide').querySelectorAll('[data-card-dose-row]').length, vern: !!find('Vernakalant').querySelector('[data-card-dose]') };
+      const c = { po: 0, iv: 0, both: 0, none: 0 };
+      cards.forEach(a => { const v = a.querySelector('[data-drug-icon]'); const k = v && v.getAttribute('data-drug-icon'); if (k === 'po') c.po++; else if (k === 'iv') c.iv++; else if (k === 'po+iv') c.both++; else c.none++; });
+      const stripes = cards.filter(a => /border-l-(amber|yellow|rose|indigo|purple|emerald|sky)-400/.test(a.className)).length;
+      return { cards: cards.length, ...c, stripes };
     })()`);
-    results.push({ test: 'Tile cards show the MIMS dose, one line per indication or route', pass: cardDose.cards === 27 && cardDose.withDose === 27 && cardDose.amioRows === 7 && cardDose.procRows === 4, detail: JSON.stringify(cardDose) });
+    results.push({ test: 'Every card has a dosage-form icon (oral 11, injection 9, both 7) and a class colour edge', pass: icons.cards === 27 && icons.po === 11 && icons.iv === 9 && icons.both === 7 && icons.none === 0 && icons.stripes === 27, detail: JSON.stringify(icons) });
+
+    // Tile cards show the first MIMS dose row; the rest on tap (one line per indication or route)
+    const cardDose = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const cards = () => Array.from(document.querySelectorAll('article'));
+      const find = (name) => cards().find(c => c.textContent.includes(name));
+      const rows = (name) => find(name).querySelectorAll('[data-card-dose-row]').length;
+      const before = { amio: rows('Amiodarone'), proc: rows('Procainamide'), dronToggle: !!find('Dronedarone').querySelector('[data-dose-toggle]') };
+      find('Amiodarone').querySelector('[data-dose-toggle]').click(); await wait(200);
+      const opened = { amio: rows('Amiodarone'), openedDetail: !!document.querySelector('.fixed.inset-0') };
+      find('Amiodarone').querySelector('[data-dose-toggle]').click(); await wait(200);
+      return { withDose: cards().filter(c => c.querySelector('[data-card-dose]')).length, before, opened, after: rows('Amiodarone'), vern: !!find('Vernakalant').querySelector('[data-card-dose]') };
+    })()`);
+    results.push({ test: 'Tile cards show the first MIMS dose row; "All N doses" opens one line per indication or route', pass: cardDose.withDose === 27 && cardDose.before.amio === 1 && cardDose.before.proc === 1 && !cardDose.before.dronToggle && cardDose.opened.amio === 7 && !cardDose.opened.openedDetail && cardDose.after === 1, detail: JSON.stringify(cardDose) });
+
+    // Phone list: compact rows, no sideways scroll, group headers still work
+    await send('Emulation.setDeviceMetricsOverride', { width: 375, height: 812, deviceScaleFactor: 1, mobile: true });
+    await evaluate('setTimeout(() => location.reload(), 50)');
+    await sleep(2500);
+    const phone = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      document.querySelector('button[aria-label="List View"]').click(); await wait(300);
+      const rows = document.querySelectorAll('[data-phone-row]').length;
+      const table = document.querySelectorAll('table').length;
+      const fit = document.documentElement.scrollWidth <= window.innerWidth;
+      const icons = document.querySelectorAll('[data-phone-row] [data-drug-icon]').length;
+      document.querySelector('button[aria-label="Grid View"]').click(); await wait(200);
+      return { rows, table, fit, icons, width: window.innerWidth };
+    })()`);
+    await send('Emulation.clearDeviceMetricsOverride', {});
+    await sleep(600);
+    results.push({ test: 'Phone list view: compact rows with icons, no table, no sideways scroll', pass: phone.rows === 27 && phone.table === 0 && phone.fit && phone.icons === 27, detail: JSON.stringify(phone) });
 
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
