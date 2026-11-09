@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "The Countries group now also has US, UK, EU and JP buttons beside TH and Others, so availability can be filtered country by country (every selected button must hold; Others = any of the four).",
       "Country availability like the bronchodilator guide: each card shows TH, US, UK, EU and JP chips (current, past †, not found ⊘). The Filters box has a Countries group with TH and Others (US, UK, EU or Japan), an FDA status group (Currently, Past, Not found) beside it, and NLEM only next to that; the old three-way NLEM menu is replaced. The Overview tab lists the status per country with its basis. Sources: Thai FDA register, DailyMed, emc, AEMPS CIMA (Spain as the EU proxy) and KEGG MEDICUS (JAPIC), checked 9 Nov 2026.",
       "Every drug now has a dosage-form icon (oral, injection, or both) tinted by its class; tile cards have a class colour edge, a bigger name, one merged brand line, and show the first MIMS dose line with the rest on tap. On phones the list view is a compact row list with no sideways scroll.",
       "Tile cards now show the adult dose from MIMS Thailand, one line for each indication or route, in full (the same rows as the Dosing tab).",
@@ -88,6 +89,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "กลุ่มประเทศมีปุ่ม US, UK, EU และ JP เพิ่มข้าง TH และ อื่น ๆ กรองการวางจำหน่ายรายประเทศได้ (ต้องเป็นจริงทุกปุ่มที่เลือก ส่วน อื่น ๆ = ประเทศใดประเทศหนึ่งในสี่ประเทศ)",
       "แสดงการวางจำหน่ายตามประเทศเหมือนแอป bronchodilator: การ์ดยามีป้าย TH, US, UK, EU และ JP (ปัจจุบัน เคยมี † ไม่พบ ⊘) กล่องตัวกรองมีกลุ่มประเทศ TH และ อื่น ๆ (สหรัฐฯ สหราชอาณาจักร สหภาพยุโรป หรือญี่ปุ่น) กลุ่มสถานะ อย. (ปัจจุบัน เคยมี ไม่พบ) ถัดไป และ เฉพาะบัญชียาหลัก ต่อจากนั้น แทนเมนู NLEM สามตัวเลือกเดิม แท็บภาพรวมแสดงสถานะรายประเทศพร้อมที่มา แหล่งข้อมูล: ทะเบียนยา อย. DailyMed emc AEMPS CIMA (ใช้สเปนแทนสหภาพยุโรป) และ KEGG MEDICUS (JAPIC) ตรวจเมื่อ 9 พ.ย. 2569",
       "ยาทุกตัวมีไอคอนรูปแบบยา (รับประทาน ฉีด หรือทั้งสอง) ใช้สีตามกลุ่มยา การ์ด tile มีแถบสีกลุ่มยาด้านซ้าย ชื่อยาใหญ่ขึ้น บรรทัดชื่อการค้ารวมกัน และแสดงขนาดยาบรรทัดแรกของ MIMS ส่วนที่เหลือแตะเพื่อดู บนมือถือมุมมองรายการเป็นแถวกะทัดรัดไม่ต้องเลื่อนซ้ายขวา",
       "การ์ดแบบ tile แสดงขนาดยาผู้ใหญ่จาก MIMS Thailand แยกบรรทัดตามข้อบ่งใช้หรือทางให้ยา ครบทั้งข้อความ (เป็นแถวเดียวกับแท็บขนาดยา)",
@@ -255,7 +257,7 @@ function App() {
   const [safeCadOnly, setSafeCadOnly] = useState(false);
   const [lowQtOnly, setLowQtOnly] = useState(false);
   const [renalAdjustOnly, setRenalAdjustOnly] = useState(false);
-  const [regCtry, setRegCtry] = useState([]); // 'th' and/or 'others' (US, UK, EU, JP)
+  const [regCtry, setRegCtry] = useState([]); // 'th', 'others' (any of US, UK, EU, JP) and/or 'us', 'uk', 'eu', 'jp'; every selected button must hold
   const [regSt, setRegSt] = useState([]); // 'current' | 'past' | 'never'
   const [nlemOnly, setNlemOnly] = useState(false);
   const toggleIn = (setter) => (v) => setter(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
@@ -388,8 +390,8 @@ function App() {
       // Registration: TH = the Thai FDA register; Others = any of US, UK, EU, JP. Status chips pick the status (default: current).
       const stOk = (s) => (regSt.length ? regSt.includes(s) : s === 'current');
       const cs = regCtry.length ? regCtry : (regSt.length ? ['th'] : []);
-      if (cs.includes('th') && !stOk(drug.reg.th)) return false;
       if (cs.includes('others') && !['us', 'uk', 'eu', 'jp'].some(c => stOk(drug.reg[c]))) return false;
+      if (['th', 'us', 'uk', 'eu', 'jp'].some(c => cs.includes(c) && !stOk(drug.reg[c]))) return false;
 
       return true;
     }).sort((a, b) => {
@@ -553,8 +555,8 @@ function App() {
               <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full min-w-0" data-filter-row="registration">
                 <div className={REG_GB} role="group" aria-label={t.regCountries} title={t.regCountriesTitle} data-reg-countries>
                   <span className="pl-1 pr-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">{t.regCountries}:</span>
-                  {[['th', t.regTH, 'bg-emerald-700 text-white shadow-sm', 'text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'], ['others', t.regOthers, 'bg-violet-700 text-white shadow-sm', 'text-violet-800 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10']].map(([k, label, on, off]) => (
-                    <button key={k} type="button" onClick={() => toggleIn(setRegCtry)(k)} aria-pressed={regCtry.includes(k)} data-reg-ctry={k} title={t.regCountriesTitle} className={REG_BTN + (regCtry.includes(k) ? on : off)}>{label}</button>
+                  {[['th', t.regTH, 'bg-emerald-700 text-white shadow-sm', 'text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10', t.regNameTH], ['others', t.regOthers, 'bg-slate-700 text-white shadow-sm', 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700', t.regCountriesTitle], ['us', 'US', 'bg-blue-700 text-white shadow-sm', 'text-blue-800 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10', t.regNameUS], ['uk', 'UK', 'bg-rose-700 text-white shadow-sm', 'text-rose-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10', t.regNameUK], ['eu', 'EU', 'bg-amber-700 text-white shadow-sm', 'text-amber-900 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10', t.regNameEU], ['jp', 'JP', 'bg-violet-700 text-white shadow-sm', 'text-violet-800 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10', t.regNameJP]].map(([k, label, on, off, tip]) => (
+                    <button key={k} type="button" onClick={() => toggleIn(setRegCtry)(k)} aria-pressed={regCtry.includes(k)} data-reg-ctry={k} title={tip} className={REG_BTN + (regCtry.includes(k) ? on : off)}>{label}</button>
                   ))}
                 </div>
                 <div className={REG_GB} role="group" aria-label={t.regFda} title={t.regFdaTitle} data-reg-status>

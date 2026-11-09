@@ -634,11 +634,13 @@ async function main() {
       await click('[data-reg-ctry="th"]'); out.others = n();
       await click('[data-reg-st="never"]'); out.othersNever = n();
       await click('[data-reg-st="never"]'); await click('[data-reg-ctry="others"]');
+      for (const c of ['us', 'uk', 'eu', 'jp']) { await click('[data-reg-ctry="' + c + '"]'); out[c] = n(); await click('[data-reg-ctry="' + c + '"]'); }
+      await click('[data-reg-ctry="us"]'); await click('[data-reg-ctry="jp"]'); out.usJp = n(); await click('[data-reg-ctry="us"]'); await click('[data-reg-ctry="jp"]');
       await click('[data-nlem-only]'); out.nlem = n(); out.nlemCards = Array.from(document.querySelectorAll('article')).filter(c => /NLEM 2569: /.test(c.textContent)).length;
       await click('[data-nlem-only]'); out.back = n();
       return out;
     })()`);
-    results.push({ test: 'Country availability: chips on every card; TH and Others toggles, FDA status beside them, NLEM only next to FDA', pass: reg.chipCards === 27 && reg.order === 'countries>fda>nlem' && reg.ctryButtons === 'th,others' && reg.all === 27 && reg.th === 19 && reg.thPast === 4 && reg.thNever === 4 && reg.thOthers === 19 && reg.others === 27 && reg.othersNever === 7 && reg.nlem === reg.nlemCards && reg.back === 27, detail: JSON.stringify(reg) });
+    results.push({ test: 'Country availability: chips on every card; TH, Others, US, UK, EU and JP toggles, FDA status beside them, NLEM only next to FDA', pass: reg.chipCards === 27 && reg.order === 'countries>fda>nlem' && reg.ctryButtons === 'th,others,us,uk,eu,jp' && reg.all === 27 && reg.th === 19 && reg.thPast === 4 && reg.thNever === 4 && reg.thOthers === 19 && reg.others === 27 && reg.othersNever === 7 && reg.us === 26 && reg.uk === 22 && reg.eu === 25 && reg.jp === 22 && reg.usJp === 22 && reg.nlem === reg.nlemCards && reg.back === 27, detail: JSON.stringify(reg) });
 
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
