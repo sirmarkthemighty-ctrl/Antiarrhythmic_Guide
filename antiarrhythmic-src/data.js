@@ -4,7 +4,7 @@
 const translations = {
   en: {
     title: "Antiarrhythmic Drug Guide",
-    subtitle: "Antiarrhythmic and related drugs with dosing, safety, kidney/liver adjustment and Thai NLEM 2569 status, from FDA/EU labels and guidelines.",
+    subtitle: "Antiarrhythmic and related drugs with dosing, safety, kidney/liver adjustment",
     credit: "Clinical Cardiology Electrophysiology Reference",
     disclaimer: "For healthcare professionals only. Check every dose against the current label and the patient before use.",
     discLink: "Decision support only: read the disclaimer",
@@ -149,7 +149,7 @@ const translations = {
   },
   th: {
     title: "คู่มือยาต้านหัวใจเต้นผิดจังหวะ",
-    subtitle: "ยาต้านหัวใจเต้นผิดจังหวะและยาที่เกี่ยวข้อง พร้อมขนาดยา ความปลอดภัย การปรับยาตามไต/ตับ และสถานะบัญชียาหลักแห่งชาติ 2569 จากฉลากยา FDA/EU และแนวทางปฏิบัติ",
+    subtitle: "ยาต้านหัวใจเต้นผิดจังหวะและยาที่เกี่ยวข้อง พร้อมขนาดยา ความปลอดภัย การปรับยาตามไต/ตับ",
     credit: "Clinical Cardiology Electrophysiology Reference",
     disclaimer: "สำหรับบุคลากรทางการแพทย์เท่านั้น ตรวจสอบขนาดยาทุกครั้งกับฉลากยาฉบับปัจจุบันและผู้ป่วยก่อนใช้",
     discLink: "ใช้ประกอบการตัดสินใจเท่านั้น: อ่านข้อจำกัดความรับผิดชอบ",

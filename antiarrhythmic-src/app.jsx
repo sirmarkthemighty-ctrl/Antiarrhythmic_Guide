@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "A heart Donate button beside the language pill opens a PromptPay QR pop-up (voluntary support; the content of the guide is unaffected).",
       "Selecting one drug adds a Dose sheet (one page: adult dose, ESC guideline rows, key warning, availability; print or copy as text); selecting any drugs adds Print selected. The detail window opens on the Dosing tab and keeps the first dose line and the key warning in view on every tab. On phones the Clinical tools tile steps aside while you scroll down. When no drug matches, the empty state lists the active filters so you can remove them one by one; the typed search text is highlighted in names and brands. Printing now works for the ward sheet too (it prints only the sheet).",
       "Cards now have Select (top right) with Details under it, like the bronchodilator guide: icon-only on phones. The Compare button on the card is gone; the bar at the bottom shows Compare only once two or more drugs are selected. The country chips (TH US UK EU JP) sit on one line under the name, with the NLEM chip right after TH because it is specific to Thailand.",
       "Active filters are shown as removable chips under the controls with a Clear button, and a Key button beside the count explains the colours, icons and chips. The six clinical tools sit in a collapsible tile (closed by default on phones, remembered). On the tile card the class and route chips share a line, the warning comes before the dose, and the country chips sit in the last row beside NLEM; the compare bar no longer covers the last card.",
@@ -92,6 +93,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "เพิ่มปุ่มหัวใจ สนับสนุน ข้างปุ่มภาษา กดแล้วแสดง QR พร้อมเพย์ (การสนับสนุนเป็นความสมัครใจ และไม่มีผลต่อเนื้อหาของคู่มือ)",
       "เลือกยาหนึ่งตัวจะมีปุ่มใบสรุปขนาดยา (หนึ่งหน้า: ขนาดยาผู้ใหญ่ แถวจากแนวทาง ESC คำเตือนสำคัญ การวางจำหน่าย พิมพ์หรือคัดลอกเป็นข้อความได้) และเมื่อเลือกยาใดก็ตามจะมีปุ่มพิมพ์ที่เลือก หน้าต่างรายละเอียดเปิดที่แท็บขนาดยา และแสดงบรรทัดขนาดยาแรกกับคำเตือนสำคัญตลอดทุกแท็บ บนมือถือแผ่นเครื่องมือจะหลบเมื่อเลื่อนลง เมื่อไม่มียาที่ตรงเงื่อนไข หน้าว่างจะแสดงตัวกรองที่ใช้อยู่ให้เอาออกทีละตัว และไฮไลต์ข้อความที่ค้นหาในชื่อยาและชื่อการค้า การพิมพ์ใบสรุปทำงานได้ถูกต้อง (พิมพ์เฉพาะใบสรุป)",
       "การ์ดมีปุ่มเลือก (มุมขวาบน) และปุ่มรายละเอียดอยู่ด้านล่าง เหมือนแอป bronchodilator บนมือถือแสดงเป็นไอคอน ปุ่มเปรียบเทียบบนการ์ดถูกเอาออก แถบด้านล่างจะแสดงปุ่มเปรียบเทียบเมื่อเลือกยาตั้งแต่สองตัวขึ้นไป ป้ายประเทศ (TH US UK EU JP) อยู่บรรทัดเดียวใต้ชื่อยา โดยป้าย NLEM อยู่ต่อจาก TH เพราะเป็นของประเทศไทยโดยเฉพาะ",
       "ตัวกรองที่ใช้อยู่แสดงเป็นชิปกดเอาออกได้ใต้แถบควบคุม พร้อมปุ่มล้างทั้งหมด และปุ่มสัญลักษณ์ข้างจำนวนยาอธิบายสี ไอคอน และป้ายต่าง ๆ เครื่องมือทางคลินิกทั้งหกอยู่ในแผ่นที่พับได้ (ปิดไว้ก่อนบนมือถือ และจำค่าไว้) บนการ์ด ชิปกลุ่มยาและทางให้ยาอยู่บรรทัดเดียวกัน คำเตือนมาก่อนขนาดยา ป้ายประเทศอยู่แถวล่างข้าง NLEM และแถบเปรียบเทียบไม่บังการ์ดสุดท้ายอีกต่อไป",
@@ -491,6 +493,7 @@ function App() {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             {APP_VERSION}
           </button>
+          <DonateButton isTh={lang === 'th'} />
           <button onClick={() => setLang(lang === 'en' ? 'th' : 'en')} className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-sm px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer">
             {lang === 'en' ? 'ไทย' : 'EN'}
           </button>

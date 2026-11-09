@@ -751,6 +751,23 @@ async function main() {
     })()`);
     results.push({ test: 'Selection bar (Dose sheet, Print selected), detail summary on Dosing, empty state with removable filters, search highlight', pass: bigUi.bar1 && bigUi.sheetInBody && bigUi.sheetText && bigUi.copyBtn && bigUi.sheetClosed && bigUi.printRows === 2 && bigUi.printInBody && bigUi.detailTab === 'Dosing' && bigUi.summary && bigUi.summaryStays && /amio/.test(bigUi.mark) && bigUi.empty && bigUi.restored === 27, detail: JSON.stringify(bigUi) });
 
+    // Donate button: heart button opens the PromptPay QR pop-up, Escape closes only the pop-up
+    const don = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const out = {};
+      const btn = document.querySelector('[data-donate-btn]');
+      out.btn = !!btn && btn.closest('[data-top-controls]') !== null;
+      btn.click(); await wait(300);
+      const m = document.querySelector('[data-donate-modal]') || document.querySelector('[data-donate-qr]');
+      const img = document.querySelector('[data-donate-qr]');
+      out.qr = !!img && img.src.startsWith('data:image/jpeg') && img.naturalWidth > 100;
+      out.inBody = !!img && img.closest('.fixed') && img.closest('.fixed').parentElement === document.body;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await wait(300);
+      out.closed = !document.querySelector('[data-donate-qr]');
+      return out;
+    })()`);
+    results.push({ test: 'Donate button in the top controls opens the PromptPay QR pop-up; Escape closes it', pass: don.btn && don.qr && don.inBody && don.closed, detail: JSON.stringify(don) });
+
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
     results.push({ test: 'Zero Console Errors / Runtime Exceptions', pass: errorCount === 0, detail: errorCount === 0 ? 'Clean execution' : JSON.stringify(pageErrors) });
