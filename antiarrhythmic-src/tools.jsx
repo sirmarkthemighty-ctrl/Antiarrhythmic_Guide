@@ -73,14 +73,17 @@ const REG_TONE = {
 };
 const REG_NAME = { th: ['Thailand', 'ไทย'], us: ['United States', 'สหรัฐอเมริกา'], uk: ['United Kingdom', 'สหราชอาณาจักร'], eu: ['European Union', 'สหภาพยุโรป'], jp: ['Japan', 'ญี่ปุ่น'] };
 const REG_STATUS = { current: ['Current', 'ปัจจุบัน'], past: ['Past', 'เคยมี'], never: ['Not found', 'ไม่พบ'] };
-function RegChips({ d, lang }) {
+function RegChips({ d, lang, nlem }) {
   const i = lang === 'th' ? 1 : 0;
   return (
     <div className="contents" data-reg-chips>
       {REG_COUNTRIES.map(c => {
         const st = d.reg[c];
         const cls = st === 'current' ? REG_TONE[c] : st === 'past' ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300' : 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400';
-        return <span key={c} data-reg={c + ':' + st} title={REG_NAME[c][i] + ': ' + REG_STATUS[st][i]} className={'text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ' + cls}>{c.toUpperCase()}{st === 'past' ? ' †' : st === 'never' ? ' ⊘' : ''}</span>;
+        const chip = <span key={c} data-reg={c + ':' + st} title={REG_NAME[c][i] + ': ' + REG_STATUS[st][i]} className={'text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ' + cls}>{c.toUpperCase()}{st === 'past' ? ' †' : st === 'never' ? ' ⊘' : ''}</span>;
+        // the NLEM chip belongs to Thailand, so it follows the TH chip (same as the bronchodilator guide)
+        if (c === 'th' && nlem) return [chip, <span key="nlem" data-nlem-chip title={nlemText(d.nlem, lang)} className={'text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ' + (d.nlem.list ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400')}>{nlemShort(d.nlem, lang)}</span>];
+        return chip;
       })}
     </div>
   );

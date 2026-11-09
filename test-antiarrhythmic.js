@@ -663,7 +663,7 @@ async function main() {
       const chipBtn = card.querySelector('button[title*="Action Potential"]');
       out.chipLine = chipBtn.parentElement.textContent.includes('IV') && chipBtn.parentElement.textContent.includes('PO');
       const html = card.innerHTML; out.warnBeforeDose = html.indexOf('rose-50/70') < html.indexOf('data-card-dose');
-      const footerChips = card.querySelector('[data-reg-chips]'); out.footerChips = !!footerChips && footerChips.parentElement.hasAttribute('data-chip-row') && footerChips.previousElementSibling && footerChips.previousElementSibling.hasAttribute('data-nlem-chip'); // country chips sit right after the NLEM chip, under the name
+      const footerChips = card.querySelector('[data-reg-chips]'); const thChip = card.querySelector('[data-reg^="th:"]'); out.footerChips = !!footerChips && footerChips.parentElement.hasAttribute('data-chip-row') && !!thChip && !!thChip.nextElementSibling && thChip.nextElementSibling.hasAttribute('data-nlem-chip') && thChip.nextElementSibling.nextElementSibling.getAttribute('data-reg').startsWith('us:'); // NLEM chip right after TH, then US UK EU JP
       // tools tile
       if (!q('[data-guide-buttons]') || q('[data-guide-buttons]').className.includes('hidden')) await click('[data-tools-toggle]'); // the phone check above left it collapsed (remembered)
       const tools = q('[data-guide-buttons]'); const open0 = !!tools && tools.className.includes('grid');
