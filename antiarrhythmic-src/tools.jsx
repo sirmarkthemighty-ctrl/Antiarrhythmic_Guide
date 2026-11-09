@@ -105,6 +105,27 @@ function RegBlock({ d, lang }) {
   );
 }
 
+// Select (for comparing) with Details under it: top right of a card, icon-only on phones (same as the bronchodilator guide)
+function CardActions({ selected, onSelect, onDetails, lang }) {
+  const th = lang === 'th';
+  const sel = th ? (selected ? 'เลือกแล้ว' : 'เลือก') : (selected ? 'Selected' : 'Select');
+  const det = th ? 'รายละเอียด' : 'Details';
+  return (
+    <div className="shrink-0 flex flex-col items-end sm:items-stretch gap-1.5 print:hidden" data-card-actions>
+      <button type="button" onClick={onSelect} aria-pressed={selected} data-select title={sel} aria-label={sel}
+        className={'flex items-center justify-center w-7 h-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-md text-[10px] font-bold tracking-wider uppercase transition-colors border ' + (selected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 shadow-sm')}>
+        {selected ? <Check className="w-4 h-4 sm:w-3 sm:h-3" /> : <ArrowRightLeft className="w-4 h-4 sm:w-3 sm:h-3" />}
+        <span className="hidden sm:inline sm:ml-1.5">{sel}</span>
+      </button>
+      <button type="button" onClick={onDetails} data-details title={det} aria-label={det}
+        className="flex items-center justify-center w-7 h-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-md text-[10px] font-bold tracking-wider uppercase transition-colors border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 shadow-sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 sm:hidden" aria-hidden="true"><circle cx="12" cy="12" r="9.5" /><path d="M12 11v5.5" /><path d="M12 7.5h.01" /></svg>
+        <span className="hidden sm:inline">{det} <span aria-hidden="true">›</span></span>
+      </button>
+    </div>
+  );
+}
+
 // Key: what the colours, icons and chips on the cards mean
 function KeyModal({ lang, onClose }) {
   const th = lang === 'th';

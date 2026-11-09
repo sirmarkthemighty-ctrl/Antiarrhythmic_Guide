@@ -220,7 +220,7 @@ async function main() {
 
     // Test 9: Comparison Dock & Comparison Modal
     const compareSelected = await evaluate(`(() => {
-      const compareButtons = Array.from(document.querySelectorAll('article button')).filter(b => b.textContent.includes('Compare'));
+      const compareButtons = Array.from(document.querySelectorAll('article [data-select]'));
       if (compareButtons.length >= 2) {
         compareButtons[0].click();
         compareButtons[1].click();
@@ -663,19 +663,45 @@ async function main() {
       const chipBtn = card.querySelector('button[title*="Action Potential"]');
       out.chipLine = chipBtn.parentElement.textContent.includes('IV') && chipBtn.parentElement.textContent.includes('PO');
       const html = card.innerHTML; out.warnBeforeDose = html.indexOf('rose-50/70') < html.indexOf('data-card-dose');
-      const footerChips = card.querySelector('[data-reg-chips]'); out.footerChips = !!footerChips && /NLEM/.test(footerChips.parentElement.textContent);
+      const footerChips = card.querySelector('[data-reg-chips]'); out.footerChips = !!footerChips && footerChips.parentElement.className.includes('border-t'); // country chips: the last row of the card
       // tools tile
       if (!q('[data-guide-buttons]') || q('[data-guide-buttons]').className.includes('hidden')) await click('[data-tools-toggle]'); // the phone check above left it collapsed (remembered)
       const tools = q('[data-guide-buttons]'); const open0 = !!tools && tools.className.includes('grid');
       await click('[data-tools-toggle]'); out.toolsHidden = q('[data-guide-buttons]') === null || q('[data-guide-buttons]').className.includes('hidden');
       await click('[data-tools-toggle]'); out.toolsBack = open0 && q('[data-guide-buttons]').className.includes('grid');
       // compare spacing
-      Array.from(document.querySelectorAll('article')).slice(0, 2).forEach(a => Array.from(a.querySelectorAll('button')).find(b => /Compare/.test(b.textContent)).click()); await wait(250);
+      Array.from(document.querySelectorAll('article')).slice(0, 2).forEach(a => a.querySelector('[data-select]').click()); await wait(250);
       out.pad = document.querySelector('main').className.includes('pb-24');
       const clr = document.querySelector('button[title="Clear All"]'); if (clr) clr.click(); await wait(200);
       return out;
     })()`);
     results.push({ test: 'Active filter chips (remove one, Clear all), Key modal, card layout, collapsible Tools tile, compare bar spacing', pass: ui2.none && ui2.chips.length === 2 && ui2.afterRemove.length === 1 && ui2.shown === 15 && ui2.afterClear && ui2.all === 27 && ui2.key && ui2.keyClosed && ui2.chipLine && ui2.warnBeforeDose && ui2.footerChips && ui2.toolsHidden && ui2.toolsBack && ui2.pad, detail: JSON.stringify(ui2) });
+
+    // Select (top right) with Details below; Compare only after two are selected; NLEM chip under the name
+    const sel = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const cards = () => Array.from(document.querySelectorAll('article'));
+      const out = {};
+      const c0 = cards()[0];
+      const act = c0.querySelector('[data-card-actions]');
+      out.order = Array.from(act.querySelectorAll('button')).map(b => b.hasAttribute('data-select') ? 'select' : b.hasAttribute('data-details') ? 'details' : '?').join('>');
+      const header = c0.querySelector('[data-card-actions]').parentElement;
+      out.topRight = header === c0.querySelector('article > div > div') || header.contains(c0.querySelector('h2, span.font-extrabold.text-lg'));
+      out.noCompareButton = !Array.from(c0.querySelectorAll('button')).some(b => /^\\s*Compare/.test(b.textContent));
+      out.nlemUnderName = !!c0.querySelector('[data-nlem-chip]') && c0.querySelector('[data-nlem-chip]').compareDocumentPosition(c0.querySelector('[data-card-dose]')) & Node.DOCUMENT_POSITION_FOLLOWING ? true : false;
+      c0.querySelector('[data-select]').click(); await wait(250);
+      out.oneSelected = c0.querySelector('[data-select]').getAttribute('aria-pressed') === 'true';
+      const dockBtn = () => Array.from(document.querySelectorAll('button')).some(b => /^Compare \\(\\d\\)/.test(b.textContent.trim()));
+      out.dockOne = document.body.textContent.includes('1 drugs selected') && !dockBtn();
+      cards()[1].querySelector('[data-select]').click(); await wait(250);
+      out.dockTwo = dockBtn();
+      document.querySelector('button[title="Clear All"]').click(); await wait(250);
+      cards()[2].querySelector('[data-details]').click(); await wait(300);
+      out.detailOpened = !!document.querySelector('.fixed.inset-0') && document.body.textContent.includes('Overview');
+      const close = document.querySelector('.fixed button svg line[x1="18"]'); if (close) close.closest('button').click(); await wait(200);
+      return out;
+    })()`);
+    results.push({ test: 'Cards: Select with Details below at the top right, no Compare button on the card, Compare appears after two are selected, NLEM chip under the name', pass: sel.order === 'select>details' && sel.noCompareButton && sel.nlemUnderName && sel.oneSelected && sel.dockOne && sel.dockTwo && sel.detailOpened, detail: JSON.stringify(sel) });
 
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;

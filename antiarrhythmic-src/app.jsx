@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "Cards now have Select (top right) with Details under it, like the bronchodilator guide: icon-only on phones. The Compare button on the card is gone; the bar at the bottom shows Compare only once two or more drugs are selected. The NLEM chip moved up under the name; the country chips stay in the last row.",
       "Active filters are shown as removable chips under the controls with a Clear button, and a Key button beside the count explains the colours, icons and chips. The six clinical tools sit in a collapsible tile (closed by default on phones, remembered). On the tile card the class and route chips share a line, the warning comes before the dose, and the country chips sit in the last row beside NLEM; the compare bar no longer covers the last card.",
       "The Countries group has TH, US, UK, EU and JP buttons, so availability can be filtered country by country (every selected button must hold).",
       "Country availability like the bronchodilator guide: each card shows TH, US, UK, EU and JP chips (current, past †, not found ⊘). The Filters box has a Countries group with TH, US, UK, EU and JP buttons, an FDA status group (Currently, Past, Not found) beside it, and NLEM only next to that; the old three-way NLEM menu is replaced. The Overview tab lists the status per country with its basis. Sources: Thai FDA register, DailyMed, emc, AEMPS CIMA (Spain as the EU proxy) and KEGG MEDICUS (JAPIC), checked 9 Nov 2026.",
@@ -90,6 +91,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "การ์ดมีปุ่มเลือก (มุมขวาบน) และปุ่มรายละเอียดอยู่ด้านล่าง เหมือนแอป bronchodilator บนมือถือแสดงเป็นไอคอน ปุ่มเปรียบเทียบบนการ์ดถูกเอาออก แถบด้านล่างจะแสดงปุ่มเปรียบเทียบเมื่อเลือกยาตั้งแต่สองตัวขึ้นไป ป้าย NLEM ย้ายขึ้นมาใต้ชื่อยา ส่วนป้ายประเทศยังอยู่แถวล่าง",
       "ตัวกรองที่ใช้อยู่แสดงเป็นชิปกดเอาออกได้ใต้แถบควบคุม พร้อมปุ่มล้างทั้งหมด และปุ่มสัญลักษณ์ข้างจำนวนยาอธิบายสี ไอคอน และป้ายต่าง ๆ เครื่องมือทางคลินิกทั้งหกอยู่ในแผ่นที่พับได้ (ปิดไว้ก่อนบนมือถือ และจำค่าไว้) บนการ์ด ชิปกลุ่มยาและทางให้ยาอยู่บรรทัดเดียวกัน คำเตือนมาก่อนขนาดยา ป้ายประเทศอยู่แถวล่างข้าง NLEM และแถบเปรียบเทียบไม่บังการ์ดสุดท้ายอีกต่อไป",
       "กลุ่มประเทศมีปุ่ม TH, US, UK, EU และ JP กรองการวางจำหน่ายรายประเทศได้ (ต้องเป็นจริงทุกปุ่มที่เลือก)",
       "แสดงการวางจำหน่ายตามประเทศเหมือนแอป bronchodilator: การ์ดยามีป้าย TH, US, UK, EU และ JP (ปัจจุบัน เคยมี † ไม่พบ ⊘) กล่องตัวกรองมีกลุ่มประเทศ TH US UK EU และ JP กลุ่มสถานะ อย. (ปัจจุบัน เคยมี ไม่พบ) ถัดไป และ เฉพาะบัญชียาหลัก ต่อจากนั้น แทนเมนู NLEM สามตัวเลือกเดิม แท็บภาพรวมแสดงสถานะรายประเทศพร้อมที่มา แหล่งข้อมูล: ทะเบียนยา อย. DailyMed emc AEMPS CIMA (ใช้สเปนแทนสหภาพยุโรป) และ KEGG MEDICUS (JAPIC) ตรวจเมื่อ 9 พ.ย. 2569",
@@ -781,12 +783,12 @@ function App() {
                 {!hidden && <article
                   data-drug-id={drug.id}
                   onClick={() => setDetailDrug(drug)}
-                  className={'bg-white dark:bg-slate-850 rounded-2xl border border-l-4 border-slate-200/90 dark:border-slate-750/90 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3 group ' + toneOf(drug.vwClass).stripe}
+                  className={(isCompared ? 'ring-2 ring-indigo-500 ' : '') + 'bg-white dark:bg-slate-850 rounded-2xl border border-l-4 border-slate-200/90 dark:border-slate-750/90 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3 group ' + toneOf(drug.vwClass).stripe}
                 >
                   {/* Card Top */}
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2.5 min-w-0">
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
                       <DrugIcon routes={drug.routes} vwClass={drug.vwClass} lang={lang} />
                       <div className="min-w-0">
                         <span className="block font-extrabold text-lg leading-tight text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{drug.genericName}</span>
@@ -812,9 +814,10 @@ function App() {
                           {drug.brandNames.length > 0 && drug.thaiBrands.length > 0 && ' · '}
                           {drug.thaiBrands.length > 0 && <span data-thai-brands>TH: {drug.thaiBrands.slice(0, 4).join(', ')}{drug.thaiBrands.length > 4 ? ` +${drug.thaiBrands.length - 4}` : ''}</span>}
                         </p>
+                        <span data-nlem-chip title={nlemText(drug.nlem, lang)} className={`inline-block mt-1 text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ${drug.nlem.list ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400'}`}>{nlemShort(drug.nlem, lang)}</span>
                       </div>
                       </div>
-
+                      <CardActions selected={isCompared} onSelect={(e) => toggleCompare(drug.id, e)} onDetails={(e) => { e.stopPropagation(); setDetailDrug(drug); }} lang={lang} />
                     </div>
 
                     {/* Target / Channel */}
@@ -860,22 +863,9 @@ function App() {
 
                   </div>
 
-                  {/* Card Bottom / Action Row */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0">
-                      <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`} title={nlemText(drug.nlem, lang)}>
-                        {nlemShort(drug.nlem, lang)}
-                      </span>
-                      <RegChips d={drug} lang={lang} />
-                    </div>
-
-                    <button
-                      onClick={(e) => toggleCompare(drug.id, e)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1 ${isCompared ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'}`}
-                    >
-                      <ArrowRightLeft className="w-3 h-3" />
-                      {isCompared ? t.compared : t.compareBtn}
-                    </button>
+                  {/* Card bottom: availability by country */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <RegChips d={drug} lang={lang} />
                   </div>
                 </article>}
                 </React.Fragment>
@@ -907,11 +897,9 @@ function App() {
                       ))}
                     </div>
                     {drug.mims && <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-200 line-clamp-2"><span className="font-bold text-indigo-700 dark:text-indigo-300">{lang === 'th' ? drug.mims.rows[0].lTh : drug.mims.rows[0].lEn}:</span> {lang === 'th' ? drug.mims.rows[0].th : drug.mims.rows[0].en}</p>}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>{nlemShort(drug.nlem, lang)}</span>
-                      <button onClick={(e) => toggleCompare(drug.id, e)} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${isCompared ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>{isCompared ? t.compared : t.compareBtn}</button>
-                    </div>
+                    <span className={`font-bold text-[11px] ${drug.nlem.list ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>{nlemShort(drug.nlem, lang)}</span>
                   </div>
+                  <CardActions selected={isCompared} onSelect={(e) => toggleCompare(drug.id, e)} onDetails={(e) => { e.stopPropagation(); setDetailDrug(drug); }} lang={lang} />
                 </div>}
                 </React.Fragment>
               );
@@ -978,12 +966,7 @@ function App() {
                       </td>
                       <td className="p-3 font-semibold">{nlemShort(drug.nlem, lang)}</td>
                       <td className="p-3 text-right">
-                        <button
-                          onClick={(e) => toggleCompare(drug.id, e)}
-                          className={`px-2 py-1 rounded-md text-[11px] font-bold border transition-colors ${isCompared ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 dark:bg-slate-750 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'}`}
-                        >
-                          {isCompared ? t.compared : t.compareBtn}
-                        </button>
+                        <div className="flex justify-end"><CardActions selected={isCompared} onSelect={(e) => toggleCompare(drug.id, e)} onDetails={(e) => { e.stopPropagation(); setDetailDrug(drug); }} lang={lang} /></div>
                       </td>
                     </tr>}
                     </React.Fragment>
@@ -1022,12 +1005,14 @@ function App() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsCompareOpen(true)}
-              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow transition-colors"
-            >
-              {t.compareBtn} ({compareIds.length})
-            </button>
+            {compareIds.length >= 2 && (
+              <button
+                onClick={() => setIsCompareOpen(true)}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow transition-colors"
+              >
+                {t.compareBtn} ({compareIds.length})
+              </button>
+            )}
             <button
               onClick={() => setCompareIds([])}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors"
