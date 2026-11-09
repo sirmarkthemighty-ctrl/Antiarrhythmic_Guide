@@ -63,6 +63,48 @@ function DrugIcon({ routes, vwClass, size = 'md', lang }) {
   );
 }
 
+// Registration chips (TH US UK EU JP) with the status of the drug in each country; data in reg.js.
+const REG_TONE = {
+  th: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+  us: 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-300',
+  uk: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-300',
+  eu: 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300',
+  jp: 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-400/30 dark:bg-violet-500/10 dark:text-violet-300'
+};
+const REG_NAME = { th: ['Thailand', 'ไทย'], us: ['United States', 'สหรัฐอเมริกา'], uk: ['United Kingdom', 'สหราชอาณาจักร'], eu: ['European Union', 'สหภาพยุโรป'], jp: ['Japan', 'ญี่ปุ่น'] };
+const REG_STATUS = { current: ['Current', 'ปัจจุบัน'], past: ['Past', 'เคยมี'], never: ['Not found', 'ไม่พบ'] };
+function RegChips({ d, lang }) {
+  const i = lang === 'th' ? 1 : 0;
+  return (
+    <div className="flex flex-wrap gap-1" data-reg-chips>
+      {REG_COUNTRIES.map(c => {
+        const st = d.reg[c];
+        const cls = st === 'current' ? REG_TONE[c] : st === 'past' ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300' : 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400';
+        return <span key={c} data-reg={c + ':' + st} title={REG_NAME[c][i] + ': ' + REG_STATUS[st][i]} className={'text-[10px] font-bold rounded border px-1.5 py-px leading-none whitespace-nowrap ' + cls}>{c.toUpperCase()}{st === 'past' ? ' †' : st === 'never' ? ' ⊘' : ''}</span>;
+      })}
+    </div>
+  );
+}
+// Availability block of the Overview tab: one line per country with the basis, then the sources
+function RegBlock({ d, lang }) {
+  const i = lang === 'th' ? 1 : 0;
+  const basis = (c) => {
+    if (c === 'th') return d.regThCount ? (lang === 'th' ? ' ทะเบียนยา อย.: พบ ' + d.regThCount[0] + ' ทะเบียน ยังคงอยู่ ' + d.regThCount[1] : ' Thai FDA register: ' + d.regThCount[0] + ' registrations found, ' + d.regThCount[1] + ' current') : '';
+    return '';
+  };
+  return (
+    <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/60 space-y-1.5" data-reg-block>
+      <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">{lang === 'th' ? 'การวางจำหน่ายตามประเทศ' : 'Availability by country'}</span>
+      {REG_COUNTRIES.map(c => (
+        <div key={c} className="text-xs"><span className="font-semibold text-slate-700 dark:text-slate-200">{REG_NAME[c][i]}:</span> <span className="text-slate-800 dark:text-slate-100">{REG_STATUS[d.reg[c]][i]}</span><span className="text-slate-500 dark:text-slate-400">{basis(c)}</span></div>
+      ))}
+      {d.regNote && <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">{lang === 'th' ? d.regNote.th : d.regNote.en}</p>}
+      <p className="text-[11px] italic text-slate-500 dark:text-slate-400 leading-snug">{lang === 'th' ? 'ไม่พบ = ไม่พบในทะเบียนนั้น ยังไม่ตัดความเป็นไปได้ที่เคยได้รับอนุมัติในอดีต สหภาพยุโรปใช้ข้อมูลยาที่จำหน่ายในสเปนแทน ญี่ปุ่นเป็นรายการปัจจุบัน จึงไม่มีสถานะเคยมี' : '"Not found" means not found in that register; an old authorisation is not excluded. EU uses products marketed in Spain as a proxy. The Japanese list is a current catalogue, so it has no "past".'}</p>
+      <SourceLine refs={['reg-th', 'reg-us', 'reg-uk', 'reg-eu', 'reg-jp']} lang={lang} />
+    </div>
+  );
+}
+
 // One guideline block of the Dosing tab: labelled rows from a guideline, or N/A, always with its source.
 function GuidelineBlock({ id, title, rows, naText, refKey, lang }) {
   return (
@@ -94,6 +136,11 @@ const REF_USED = {
   'aha25-ca': ['Cardiac arrest drug doses', 'ขนาดยาในภาวะหัวใจหยุดเต้น'],
   'aha25-tachy': ['Tachyarrhythmia pathway', 'แนวทางหัวใจเต้นเร็วผิดจังหวะ'],
   'aha25-brady': ['Bradycardia pathway', 'แนวทางหัวใจเต้นช้า'],
+  'reg-th': ['Thai registration status (cards, filters, Overview tab)', 'สถานะการขึ้นทะเบียนในไทย (การ์ดยา ตัวกรอง แท็บภาพรวม)'],
+  'reg-us': ['US availability (cards, filters, Overview tab)', 'การวางจำหน่ายในสหรัฐฯ (การ์ดยา ตัวกรอง แท็บภาพรวม)'],
+  'reg-uk': ['UK availability (cards, filters, Overview tab)', 'การวางจำหน่ายในสหราชอาณาจักร (การ์ดยา ตัวกรอง แท็บภาพรวม)'],
+  'reg-eu': ['EU availability, Spain as proxy (cards, filters, Overview tab)', 'การวางจำหน่ายในสหภาพยุโรป ใช้สเปนแทน (การ์ดยา ตัวกรอง แท็บภาพรวม)'],
+  'reg-jp': ['Japan availability (cards, filters, Overview tab)', 'การวางจำหน่ายในญี่ปุ่น (การ์ดยา ตัวกรอง แท็บภาพรวม)'],
   'esc19-svt': ['Recommendations for acute and chronic SVT therapy of the drugs it names (Dosing tab)', 'คำแนะนำการรักษา SVT เฉียบพลันและระยะยาวของยาที่แนวทางระบุ (แท็บขนาดยา)'],
   'esc22-va': ['Doses, cautions and recommendations for the ventricular arrhythmia drugs it covers (Dosing tab)', 'ขนาดยา ข้อควรระวัง และคำแนะนำของยา ventricular arrhythmia ที่แนวทางครอบคลุม (แท็บขนาดยา)'],
   'esc24-af': ['Doses, cautions and recommendations for the AF drugs it covers (Dosing tab)', 'ขนาดยา ข้อควรระวัง และคำแนะนำของยา AF ที่แนวทางครอบคลุม (แท็บขนาดยา)'],
@@ -109,6 +156,7 @@ const REF_GROUPS = [
   ['label', 'Drug labels (FDA, EMA)', 'ฉลากยา (FDA, EMA)', k => k.startsWith('lbl:') || k === 'ema-brinavess'],
   ['mims', 'MIMS Thailand (doses)', 'MIMS Thailand (ขนาดยา)', k => k.startsWith('mims:')],
   ['nlem', 'Thai National List of Essential Medicines', 'บัญชียาหลักแห่งชาติ', k => k === 'nlem2569'],
+  ['reg', 'Registers (availability by country)', 'ทะเบียนยาและแหล่งข้อมูลการวางจำหน่าย', k => k.startsWith('reg-')],
   ['paper', 'Journal articles', 'บทความวารสาร', () => true]
 ];
 function ReferencesSection({ lang }) {
@@ -1592,6 +1640,7 @@ function DetailModal({ drug, onClose, lang, onOpenApModal }) {
                 <span className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 block">Primary Target & Channel Mechanism</span>
                 <p className="font-semibold text-slate-800 dark:text-slate-200"><V t={drug.primaryTarget} /></p>
               </div>
+              <RegBlock d={drug} lang={lang} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-750 space-y-2">

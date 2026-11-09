@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "Country availability like the bronchodilator guide: each card shows TH, US, UK, EU and JP chips (current, past †, not found ⊘). The Filters box has a Countries group with TH and Others (US, UK, EU or Japan), an FDA status group (Currently, Past, Not found) beside it, and NLEM only next to that; the old three-way NLEM menu is replaced. The Overview tab lists the status per country with its basis. Sources: Thai FDA register, DailyMed, emc, AEMPS CIMA (Spain as the EU proxy) and KEGG MEDICUS (JAPIC), checked 9 Nov 2026.",
       "Every drug now has a dosage-form icon (oral, injection, or both) tinted by its class; tile cards have a class colour edge, a bigger name, one merged brand line, and show the first MIMS dose line with the rest on tap. On phones the list view is a compact row list with no sideways scroll.",
       "Tile cards now show the adult dose from MIMS Thailand, one line for each indication or route, in full (the same rows as the Dosing tab).",
       "The sort order, grid or list view and folded class groups are now remembered in this browser, like Group by class.",
@@ -87,6 +88,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "แสดงการวางจำหน่ายตามประเทศเหมือนแอป bronchodilator: การ์ดยามีป้าย TH, US, UK, EU และ JP (ปัจจุบัน เคยมี † ไม่พบ ⊘) กล่องตัวกรองมีกลุ่มประเทศ TH และ อื่น ๆ (สหรัฐฯ สหราชอาณาจักร สหภาพยุโรป หรือญี่ปุ่น) กลุ่มสถานะ อย. (ปัจจุบัน เคยมี ไม่พบ) ถัดไป และ เฉพาะบัญชียาหลัก ต่อจากนั้น แทนเมนู NLEM สามตัวเลือกเดิม แท็บภาพรวมแสดงสถานะรายประเทศพร้อมที่มา แหล่งข้อมูล: ทะเบียนยา อย. DailyMed emc AEMPS CIMA (ใช้สเปนแทนสหภาพยุโรป) และ KEGG MEDICUS (JAPIC) ตรวจเมื่อ 9 พ.ย. 2569",
       "ยาทุกตัวมีไอคอนรูปแบบยา (รับประทาน ฉีด หรือทั้งสอง) ใช้สีตามกลุ่มยา การ์ด tile มีแถบสีกลุ่มยาด้านซ้าย ชื่อยาใหญ่ขึ้น บรรทัดชื่อการค้ารวมกัน และแสดงขนาดยาบรรทัดแรกของ MIMS ส่วนที่เหลือแตะเพื่อดู บนมือถือมุมมองรายการเป็นแถวกะทัดรัดไม่ต้องเลื่อนซ้ายขวา",
       "การ์ดแบบ tile แสดงขนาดยาผู้ใหญ่จาก MIMS Thailand แยกบรรทัดตามข้อบ่งใช้หรือทางให้ยา ครบทั้งข้อความ (เป็นแถวเดียวกับแท็บขนาดยา)",
       "จดจำการเรียงลำดับ มุมมองกริดหรือรายการ และกลุ่มยาที่พับไว้ในเบราว์เซอร์นี้ เช่นเดียวกับปุ่มจัดกลุ่มตามกลุ่มยา",
@@ -253,7 +255,10 @@ function App() {
   const [safeCadOnly, setSafeCadOnly] = useState(false);
   const [lowQtOnly, setLowQtOnly] = useState(false);
   const [renalAdjustOnly, setRenalAdjustOnly] = useState(false);
-  const [nlemFilter, setNlemFilter] = useState('all');
+  const [regCtry, setRegCtry] = useState([]); // 'th' and/or 'others' (US, UK, EU, JP)
+  const [regSt, setRegSt] = useState([]); // 'current' | 'past' | 'never'
+  const [nlemOnly, setNlemOnly] = useState(false);
+  const toggleIn = (setter) => (v) => setter(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
 
   // Modals & Navigation
   const [isApModalOpen, setIsApModalOpen] = useState(false);
@@ -332,7 +337,8 @@ function App() {
                             (safeCadOnly ? 1 : 0) +
                             (lowQtOnly ? 1 : 0) +
                             (renalAdjustOnly ? 1 : 0) +
-                            (nlemFilter !== 'all' ? 1 : 0);
+                            ((regCtry.length || regSt.length) ? 1 : 0) +
+                            (nlemOnly ? 1 : 0);
 
   const resetAllFilters = () => {
     setSelectedClasses([]);
@@ -342,7 +348,9 @@ function App() {
     setSafeCadOnly(false);
     setLowQtOnly(false);
     setRenalAdjustOnly(false);
-    setNlemFilter('all');
+    setRegCtry([]);
+    setRegSt([]);
+    setNlemOnly(false);
     setSearchTerm('');
   };
 
@@ -375,8 +383,13 @@ function App() {
       if (renalAdjustOnly && drug.renalAdjust !== true) return false;
 
       // NLEM
-      if (nlemFilter === 'ED' && !drug.nlem.list) return false;
-      if (nlemFilter === 'nonED' && drug.nlem.list) return false;
+      if (nlemOnly && !drug.nlem.list) return false;
+
+      // Registration: TH = the Thai FDA register; Others = any of US, UK, EU, JP. Status chips pick the status (default: current).
+      const stOk = (s) => (regSt.length ? regSt.includes(s) : s === 'current');
+      const cs = regCtry.length ? regCtry : (regSt.length ? ['th'] : []);
+      if (cs.includes('th') && !stOk(drug.reg.th)) return false;
+      if (cs.includes('others') && !['us', 'uk', 'eu', 'jp'].some(c => stOk(drug.reg[c]))) return false;
 
       return true;
     }).sort((a, b) => {
@@ -395,13 +408,15 @@ function App() {
       const classRank = { 'Ia': 1, 'Ib': 2, 'Ic': 3, 'II': 4, 'III': 5, 'IV': 6, 'Other': 7 };
       return (classRank[a.vwClass] || 99) - (classRank[b.vwClass] || 99);
     });
-  }, [searchTerm, selectedClasses, selectedIndication, selectedRoute, safeHfrefOnly, safeCadOnly, lowQtOnly, renalAdjustOnly, nlemFilter, sortOrder]);
+  }, [searchTerm, selectedClasses, selectedIndication, selectedRoute, safeHfrefOnly, safeCadOnly, lowQtOnly, renalAdjustOnly, regCtry, regSt, nlemOnly, sortOrder]);
 
   const comparedDrugObjects = useMemo(() => {
     return DRUGS_DATA.filter(d => compareIds.includes(d.id));
   }, [compareIds]);
 
   // Class order for grouping (stable sort keeps the chosen sort inside each class)
+  const REG_GB = 'flex bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 shadow-sm shrink-0 items-center h-[26px] md:h-7 gap-0.5';
+  const REG_BTN = 'h-full px-1.5 md:px-2 rounded flex items-center justify-center gap-1 text-[10px] font-bold transition-all whitespace-nowrap ';
   const CLASS_RANK = { Ia: 1, Ib: 2, Ic: 3, II: 4, III: 5, IV: 6, Other: 7 };
   const shownDrugs = groupByClass ? [...filteredDrugs].sort((a, b) => (CLASS_RANK[a.vwClass] || 99) - (CLASS_RANK[b.vwClass] || 99)) : filteredDrugs;
   const groupHeader = (drug, idx, kind) => {
@@ -534,6 +549,25 @@ function App() {
                 )}
               </div>
 
+              {/* Registration: countries (TH / Others), FDA status and NLEM, same pattern as the bronchodilator guide */}
+              <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full min-w-0" data-filter-row="registration">
+                <div className={REG_GB} role="group" aria-label={t.regCountries} title={t.regCountriesTitle} data-reg-countries>
+                  <span className="pl-1 pr-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">{t.regCountries}:</span>
+                  {[['th', t.regTH, 'bg-emerald-700 text-white shadow-sm', 'text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'], ['others', t.regOthers, 'bg-violet-700 text-white shadow-sm', 'text-violet-800 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10']].map(([k, label, on, off]) => (
+                    <button key={k} type="button" onClick={() => toggleIn(setRegCtry)(k)} aria-pressed={regCtry.includes(k)} data-reg-ctry={k} title={t.regCountriesTitle} className={REG_BTN + (regCtry.includes(k) ? on : off)}>{label}</button>
+                  ))}
+                </div>
+                <div className={REG_GB} role="group" aria-label={t.regFda} title={t.regFdaTitle} data-reg-status>
+                  <span className="pl-1 pr-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap inline-flex items-center gap-0.5">{t.regFda}<Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-emerald-700 dark:text-emerald-400" /></span>
+                  {[['current', t.regCurrent, '', 'text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'], ['past', t.regPast, '†', 'text-amber-800 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10'], ['never', t.regNever, '⊘', 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700']].map(([k, label, mark, off]) => (
+                    <button key={k} type="button" onClick={() => toggleIn(setRegSt)(k)} aria-pressed={regSt.includes(k)} data-reg-st={k} className={REG_BTN + (regSt.includes(k) ? 'bg-indigo-600 text-white shadow-sm' : off)}>{mark && <span aria-hidden="true">{mark}</span>}{label}</button>
+                  ))}
+                </div>
+                <div className={REG_GB}>
+                  <button type="button" onClick={() => setNlemOnly(v => !v)} aria-pressed={nlemOnly} data-nlem-only title={t.regNlemTitle} className={REG_BTN + (nlemOnly ? 'bg-indigo-600 text-white shadow-sm' : 'text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10')}><Check className="w-2.5 h-2.5 md:w-3 md:h-3" /> {t.regNlemOnly}</button>
+                </div>
+              </div>
+
               {/* Class filter (several allowed; long-press for the action potential) with Group by class beside it */}
               <div className="space-y-1.5" data-class-filter>
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">{t.classLabel}</span>
@@ -656,26 +690,6 @@ function App() {
                   {t.renalAdjust}
                 </button>
 
-                <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs font-bold">
-                  <button
-                    onClick={() => setNlemFilter('all')}
-                    className={`px-2 py-1 rounded-md ${nlemFilter === 'all' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600' : 'text-slate-500'}`}
-                  >
-                    {t.nlemAll}
-                  </button>
-                  <button
-                    onClick={() => setNlemFilter('ED')}
-                    className={`px-2 py-1 rounded-md ${nlemFilter === 'ED' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600' : 'text-slate-500'}`}
-                  >
-                    {t.nlemED}
-                  </button>
-                  <button
-                    onClick={() => setNlemFilter('nonED')}
-                    className={`px-2 py-1 rounded-md ${nlemFilter === 'nonED' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600' : 'text-slate-500'}`}
-                  >
-                    {t.nlemNonED}
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -780,6 +794,8 @@ function App() {
                         </span>
                       ))}
                     </div>
+
+                    <RegChips d={drug} lang={lang} />
 
                     {/* Adult dose per MIMS Thailand: the first row, the rest on tap (full text, one line per indication or route) */}
                     {drug.mims && (

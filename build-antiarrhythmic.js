@@ -41,7 +41,7 @@ function buildCss() {
 
 async function buildJs() {
   const Babel = require(path.join(TOOLS, 'node_modules', '@babel', 'standalone'));
-  const files = ['data.js', 'sources.js', 'drugs-1.js', 'drugs-2.js', 'drugs-3.js', 'drugs-4.js', 'mims.js', 'esc.js', 'esc-va.js', 'esc-svt.js', 'ap-drug.js', 'tools.jsx', 'app.jsx'];
+  const files = ['data.js', 'sources.js', 'drugs-1.js', 'drugs-2.js', 'drugs-3.js', 'drugs-4.js', 'mims.js', 'esc.js', 'esc-va.js', 'esc-svt.js', 'ap-drug.js', 'reg.js', 'tools.jsx', 'app.jsx'];
   const jsx = files.map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n\n');
   const plain = Babel.transform(jsx, { presets: ['react'], filename: 'bundle.jsx', compact: false }).code;
   if (process.argv.includes('--no-minify')) return plain;

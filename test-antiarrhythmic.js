@@ -394,7 +394,7 @@ async function main() {
       sec.querySelector('[data-refs-toggle]').click(); await wait(100);
       return { before, n: items.length, links, used, groups: groups.join(), sequential, after: document.querySelectorAll('[data-ref-item]').length };
     })()`);
-    results.push({ test: 'References section: closed by default, lists every source with link and use', pass: refs.before === 0 && refs.n >= 60 && refs.links === refs.n && refs.used === refs.n && refs.groups === 'guide,label,mims,nlem,paper' && refs.sequential && refs.after === 0, detail: JSON.stringify(refs) });
+    results.push({ test: 'References section: closed by default, lists every source with link and use', pass: refs.before === 0 && refs.n >= 60 && refs.links === refs.n && refs.used === refs.n && refs.groups === 'guide,label,mims,nlem,reg,paper' && refs.sequential && refs.after === 0, detail: JSON.stringify(refs) });
 
     // Multi-select class chips + per-drug values in the AP pop-up
     const multi = await evaluate(`(async () => {
@@ -612,6 +612,33 @@ async function main() {
     await send('Emulation.clearDeviceMetricsOverride', {});
     await sleep(600);
     results.push({ test: 'Phone list view: compact rows with icons, no table, no sideways scroll', pass: phone.rows === 27 && phone.table === 0 && phone.fit && phone.icons === 27, detail: JSON.stringify(phone) });
+
+    // Country availability: chips on every card, TH / Others toggles, FDA status chips beside them, NLEM only next to FDA
+    const reg = await evaluate(`(async () => {
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
+      const q = (s) => document.querySelector(s);
+      const n = () => document.querySelectorAll('article').length;
+      const click = async (s) => { q(s).click(); await wait(250); };
+      if (!q('[data-filter-row="registration"]')) { q('[data-filters-toggle]').click(); await wait(300); }
+      const out = {};
+      const cards = Array.from(document.querySelectorAll('article'));
+      out.chipCards = cards.filter(c => c.querySelectorAll('[data-reg]').length === 5).length;
+      const row = q('[data-filter-row="registration"]');
+      out.order = Array.from(row.children).map(c => c.hasAttribute('data-reg-countries') ? 'countries' : c.hasAttribute('data-reg-status') ? 'fda' : c.querySelector('[data-nlem-only]') ? 'nlem' : '?').join('>');
+      out.ctryButtons = Array.from(row.querySelectorAll('[data-reg-ctry]')).map(b => b.getAttribute('data-reg-ctry')).join(',');
+      out.all = n();
+      await click('[data-reg-ctry="th"]'); out.th = n();
+      await click('[data-reg-st="past"]'); out.thPast = n();
+      await click('[data-reg-st="past"]'); await click('[data-reg-st="never"]'); out.thNever = n();
+      await click('[data-reg-st="never"]'); await click('[data-reg-ctry="others"]'); out.thOthers = n();
+      await click('[data-reg-ctry="th"]'); out.others = n();
+      await click('[data-reg-st="never"]'); out.othersNever = n();
+      await click('[data-reg-st="never"]'); await click('[data-reg-ctry="others"]');
+      await click('[data-nlem-only]'); out.nlem = n(); out.nlemCards = Array.from(document.querySelectorAll('article')).filter(c => /NLEM 2569: /.test(c.textContent)).length;
+      await click('[data-nlem-only]'); out.back = n();
+      return out;
+    })()`);
+    results.push({ test: 'Country availability: chips on every card; TH and Others toggles, FDA status beside them, NLEM only next to FDA', pass: reg.chipCards === 27 && reg.order === 'countries>fda>nlem' && reg.ctryButtons === 'th,others' && reg.all === 27 && reg.th === 19 && reg.thPast === 4 && reg.thNever === 4 && reg.thOthers === 19 && reg.others === 27 && reg.othersNever === 7 && reg.nlem === reg.nlemCards && reg.back === 27, detail: JSON.stringify(reg) });
 
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
