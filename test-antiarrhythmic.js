@@ -571,6 +571,16 @@ async function main() {
     })()`);
     results.push({ test: 'Sort order, list view and a folded class group are remembered after a reload', pass: remembered.sort === 'nameDesc' && remembered.list === 'true' && remembered.folded === 'false', detail: JSON.stringify(remembered) });
 
+    // Tile cards show the MIMS dose, one line per indication or route
+    const cardDose = await evaluate(`(() => {
+      const cards = Array.from(document.querySelectorAll('article'));
+      const withDose = cards.filter(c => c.querySelector('[data-card-dose]')).length;
+      const find = (name) => cards.find(c => c.textContent.includes(name));
+      const amio = find('Amiodarone');
+      return { cards: cards.length, withDose, amioRows: amio ? amio.querySelectorAll('[data-card-dose-row]').length : -1, procRows: find('Procainamide').querySelectorAll('[data-card-dose-row]').length, vern: !!find('Vernakalant').querySelector('[data-card-dose]') };
+    })()`);
+    results.push({ test: 'Tile cards show the MIMS dose, one line per indication or route', pass: cardDose.cards === 27 && cardDose.withDose === 27 && cardDose.amioRows === 7 && cardDose.procRows === 4, detail: JSON.stringify(cardDose) });
+
     // Test 12: Zero Console Errors / Runtime Exceptions
     const errorCount = pageErrors.length;
     results.push({ test: 'Zero Console Errors / Runtime Exceptions', pass: errorCount === 0, detail: errorCount === 0 ? 'Clean execution' : JSON.stringify(pageErrors) });

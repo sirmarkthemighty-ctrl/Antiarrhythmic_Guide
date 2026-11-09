@@ -71,6 +71,7 @@ const changelogData = [
     date: "November 9, 2026",
     dateTh: "9 พฤศจิกายน 2569",
     features: [
+      "Tile cards now show the adult dose from MIMS Thailand, one line for each indication or route, in full (the same rows as the Dosing tab).",
       "The sort order, grid or list view and folded class groups are now remembered in this browser, like Group by class.",
       "Third guideline block in the Dosing tab: the 2019 ESC supraventricular tachycardia guideline for the 13 drugs it names (recommendation class and level, the doses it gives); the other 14 show N/A. Added to the references.",
       "Print Ward Sheet now shows the first Thai brands and a Doses by source column (the first MIMS and ESC entry of each drug).",
@@ -85,6 +86,7 @@ const changelogData = [
       "Action Potential pop-up and drug cards now show the mechanism in each phase (0, 2, 3, 4) taken from the drug's class, marked as class-level; anything the drug's own label states is shown separately with its source. The class curve is drawn right in the drug card (the View Curve button is gone). The curve has a light background in light mode. The group Other has no shared mechanism, so it shows N/A.",
     ],
     featuresTh: [
+      "การ์ดแบบ tile แสดงขนาดยาผู้ใหญ่จาก MIMS Thailand แยกบรรทัดตามข้อบ่งใช้หรือทางให้ยา ครบทั้งข้อความ (เป็นแถวเดียวกับแท็บขนาดยา)",
       "จดจำการเรียงลำดับ มุมมองกริดหรือรายการ และกลุ่มยาที่พับไว้ในเบราว์เซอร์นี้ เช่นเดียวกับปุ่มจัดกลุ่มตามกลุ่มยา",
       "เพิ่มส่วนที่สามในแท็บขนาดยา สรุปแนวทาง ESC 2019 สำหรับ supraventricular tachycardia ของยา 13 ตัวที่แนวทางระบุ (ระดับคำแนะนำ และขนาดยาที่แนวทางให้ไว้) ยาอีก 14 ตัวแสดง N/A และเพิ่มในเอกสารอ้างอิง",
       "ใบสรุปสำหรับพิมพ์ (Print Ward Sheet) แสดงชื่อการค้าในไทยบางส่วนและคอลัมน์ขนาดยาตามแหล่งอ้างอิง (รายการแรกของ MIMS และ ESC ของยาแต่ละตัว)",
@@ -770,6 +772,19 @@ function App() {
                         </span>
                       ))}
                     </div>
+
+                    {/* Adult dose per MIMS Thailand, one line per indication or route (full text, same rows as the Dosing tab) */}
+                    {drug.mims && (
+                      <div className="p-2 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 space-y-1.5" data-card-dose>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-700 dark:text-indigo-300 block">{lang === 'th' ? 'ขนาดยาผู้ใหญ่ (MIMS)' : 'Adult dose (MIMS)'}</span>
+                        {drug.mims.rows.map((row, i) => (
+                          <div key={i} className="text-[11px] leading-snug" data-card-dose-row>
+                            <span className="font-bold text-indigo-700 dark:text-indigo-300">{lang === 'th' ? row.lTh : row.lEn}:</span>{' '}
+                            <span className={drug.mims.na ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-100'}>{lang === 'th' ? row.th : row.en}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Critical Warning Pill */}
                     <div className="p-2 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-[11px] text-rose-900 dark:text-rose-200 leading-snug flex items-start gap-1.5 line-clamp-2">
